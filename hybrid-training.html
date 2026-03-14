@@ -1,0 +1,3042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hybrid Training Acceleration for Beginners</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-shell:      #0b0a08;
+  --bg-page:       #131109;
+  --bg-warmup:     #161410;
+  --bg-dark:       #0f0d0b;
+
+  --bronze:        #b8762a;
+  --bronze-mid:    #8a5820;
+  --bronze-dim:    #5c3a12;
+  --bronze-ghost:  rgba(184,118,42,0.014);
+  --bronze-pale:   #1a1208;
+  --rule-warm:     rgba(184,118,42,0.10);
+
+  --text-primary:   #eae4d9;
+  --text-secondary: #7e7367;
+  --text-tertiary:  #4e4438;
+  --text-error:     #a85a4a;
+
+  --rule:  rgba(255,255,255,0.065);
+  --page-w: 390px;
+  --page-h: 844px;
+}
+
+body {
+  background: var(--bg-shell);
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.doc-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ─── PAGE BASE ─── */
+.page {
+  width: 390px;
+  height: 844px;
+  background-color: var(--bg-page);
+  background-image: radial-gradient(circle, var(--bronze-ghost) 1px, transparent 1px);
+  background-size: 22px 22px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.028;
+  pointer-events: none;
+  z-index: 100;
+  mix-blend-mode: soft-light;
+}
+
+/* ─── SESSION PAGE HEADER ─── */
+.page-header {
+  flex-shrink: 0;
+  padding: 20px 26px 0;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.day-block { flex-shrink: 0; }
+
+.day-overline {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 500;
+  font-size: 9px;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  color: var(--bronze);
+  display: block;
+  margin-bottom: 5px;
+}
+
+.day-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 30px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  line-height: 0.9;
+}
+
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.week-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 400;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.tip-card {
+  border: 1px solid rgba(184,118,42,0.10);
+  background: rgba(184,118,42,0.018);
+  padding: 5px 8px;
+  width: 100%;
+}
+
+.tip-card-text {
+  font-size: 8.5px;
+  color: var(--text-tertiary);
+  line-height: 1.55;
+  font-style: italic;
+  display: block;
+  opacity: 0.8;
+}
+
+.tip-card-text strong {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600;
+  font-size: 7.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-style: normal;
+  color: var(--bronze-dim);
+  margin-right: 3px;
+}
+
+.header-rule {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    var(--bronze) 0%,
+    var(--bronze-mid) 30%,
+    var(--bronze-dim) 55%,
+    var(--rule-warm) 75%,
+    transparent 100%
+  );
+}
+
+/* ─── WARMUP BLOCK ─── */
+.warmup-block {
+  flex-shrink: 0;
+  padding: 7px 26px 8px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.warmup-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 500;
+  font-size: 8.5px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+
+.warmup-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.warmup-item {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  overflow: hidden;
+}
+
+.warmup-min {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600;
+  font-size: 8.5px;
+  color: var(--bronze-dim);
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+  min-width: 24px;
+}
+
+.warmup-text {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 500;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── EXERCISE LIST ─── */
+.content-area {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ex-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0 26px;
+}
+
+.ex-item {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0 7px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.ex-item:last-child { border-bottom: none; }
+
+.ex-item.finisher {
+  border-top: 1px solid var(--rule-warm);
+  border-bottom: none;
+}
+
+.ex-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ex-left {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  flex: 1;
+}
+
+.ex-idx {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 500;
+  font-size: 8.5px;
+  letter-spacing: 0.24em;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  width: 12px;
+}
+
+.ex-item.finisher .ex-idx { color: var(--bronze-dim); }
+
+.ex-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  display: block;
+  white-space: nowrap;
+}
+
+.ex-item.finisher .ex-name { color: var(--bronze); }
+
+.ex-mod {
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+  display: block;
+  margin-top: 1px;
+}
+
+.ex-mod-spacer {
+  display: block;
+  height: 0;
+}
+
+.ex-params {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.ex-sets {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.15;
+  display: block;
+}
+
+.ex-rest {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 400;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+  display: block;
+}
+
+.ex-cues {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 20px;
+}
+
+.ex-cue {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.ex-cue .label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 500;
+  font-size: 8.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-right: 4px;
+}
+
+.ex-error {
+  font-size: 11px;
+  color: var(--text-error);
+  line-height: 1.5;
+  opacity: 0.88;
+}
+
+.ex-error .label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 500;
+  font-size: 8.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-error);
+  opacity: 0.7;
+  margin-right: 4px;
+}
+
+/* ─── FOOTER ─── */
+.page-footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--rule);
+  padding: 7px 26px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-pg,
+.footer-prog {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 8.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+/* ─── WEEK OPENER PAGES ─── */
+.page.week-opener {
+  background-color: var(--bg-dark);
+  background-image: radial-gradient(circle, var(--bronze-ghost) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.week-opener-accent {
+  height: 3px;
+  background: var(--bronze);
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.week-opener-numeral {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900;
+  font-size: 180px;
+  color: rgba(255,255,255,0.04);
+  position: absolute;
+  top: 40px;
+  right: 20px;
+  pointer-events: none;
+  line-height: 1;
+}
+
+.week-opener-content {
+  padding: 40px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  flex: 1;
+}
+
+.week-opener-overline {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 500;
+  font-size: 9px;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  color: var(--bronze);
+  margin-bottom: 8px;
+}
+
+.week-opener-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 52px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  line-height: 0.9;
+  margin-bottom: 12px;
+}
+
+.week-opener-desc {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  max-width: 300px;
+  border-top: 1px solid var(--rule);
+  padding-top: 20px;
+  margin-top: 12px;
+}
+
+/* ─── THURSDAY ACTIVE RECOVERY ─── */
+.page.dark-page {
+  background-color: var(--bg-dark);
+  background-image: radial-gradient(circle, var(--bronze-ghost) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.dark-content {
+  padding: 32px 28px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.dark-overline {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 500;
+  font-size: 9px;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--bronze);
+  margin-bottom: 8px;
+}
+
+.dark-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 28px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  line-height: 0.9;
+  margin-bottom: 6px;
+}
+
+.dark-intro {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
+  line-height: 1.65;
+  margin-top: 12px;
+  margin-bottom: 16px;
+}
+
+.recovery-option {
+  display: flex;
+  gap: 14px;
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.recovery-option:last-child { border-bottom: none; }
+
+.recovery-icon {
+  font-size: 18px;
+  width: 24px;
+  flex-shrink: 0;
+}
+
+.recovery-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  text-transform: uppercase;
+  color: var(--bronze);
+  margin-bottom: 2px;
+}
+
+.recovery-desc {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11.5px;
+  color: rgba(255,255,255,0.45);
+  line-height: 1.5;
+}
+
+.dark-note {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-style: italic;
+  margin-top: 16px;
+}
+
+/* ─── SATURDAY BENCHMARK ─── */
+.benchmark-list {
+  flex: 1;
+  overflow: hidden;
+  padding: 4px 26px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.run-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+}
+
+.run-pill {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bronze-dim);
+  background: var(--bg-warmup);
+  padding: 3px 7px;
+  flex-shrink: 0;
+}
+
+.run-dist {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.run-note {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.station-row {
+  background: var(--bg-warmup);
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.station-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.station-reps {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.station-rest {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 9px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+.benchmark-border {
+  border-bottom: 1px solid var(--rule);
+}
+
+.benchmark-note {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  padding: 8px 0;
+  font-style: italic;
+}
+
+/* ─── CONTENT / TEXT PAGES ─── */
+.content-header {
+  flex-shrink: 0;
+  padding: 20px 26px 0;
+}
+
+.content-overline {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 500;
+  font-size: 9px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--bronze);
+  margin-bottom: 6px;
+  display: block;
+}
+
+.content-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 28px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  line-height: 0.9;
+  margin-bottom: 10px;
+}
+
+.content-field {
+  padding: 16px 26px 20px;
+  overflow: hidden;
+  flex: 1;
+}
+
+.body-text {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 400;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin-bottom: 10px;
+}
+
+.body-text:last-child { margin-bottom: 0; }
+
+.section-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 500;
+  font-size: 9px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--bronze);
+  margin-bottom: 6px;
+  margin-top: 12px;
+}
+
+.section-label:first-child { margin-top: 0; }
+
+.callout {
+  border-left: 2px solid var(--bronze-dim);
+  padding: 8px 12px;
+  background: rgba(184,118,42,0.022);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 10px 0;
+}
+
+.callout.warning {
+  border-left-color: var(--text-error);
+  background: rgba(168,90,74,0.06);
+}
+
+.content-rule {
+  height: 1px;
+  background: var(--rule);
+  margin: 12px 0;
+}
+
+.list-item {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.list-item:last-child { border-bottom: none; }
+
+.list-item-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.checklist-item {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.checkbox {
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--text-tertiary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* RPE table rows */
+.rpe-row {
+  display: flex;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  align-items: baseline;
+}
+
+.rpe-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-primary);
+  min-width: 30px;
+  flex-shrink: 0;
+}
+
+.rpe-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--bronze);
+  min-width: 60px;
+  flex-shrink: 0;
+}
+
+/* Day schedule pills */
+.day-pill {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bronze-dim);
+  background: var(--bg-warmup);
+  padding: 2px 6px;
+  margin-right: 6px;
+  display: inline-block;
+}
+
+.day-row {
+  display: flex;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--rule);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  align-items: baseline;
+}
+
+.day-row-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* Progression numerals */
+.prog-block {
+  display: flex;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+  align-items: flex-start;
+}
+
+.prog-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900;
+  font-size: 28px;
+  color: rgba(255,255,255,0.08);
+  line-height: 1;
+  flex-shrink: 0;
+  width: 28px;
+}
+
+.prog-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.prog-desc {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* Small italic text */
+.small-italic {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-style: italic;
+  line-height: 1.55;
+  margin-top: 6px;
+}
+
+.small-note {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+  line-height: 1.55;
+  margin-top: 8px;
+}
+
+/* Principle blocks */
+.principle {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.principle:last-child { border-bottom: none; }
+
+.principle-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.principle-body {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+/* Note block inside sessions */
+.note-block {
+  border-left: 2px solid var(--text-error);
+  background: rgba(168,90,74,0.06);
+  padding: 6px 10px;
+  margin: 6px 26px 4px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  color: var(--text-error);
+  line-height: 1.5;
+  opacity: 0.88;
+  flex-shrink: 0;
+}
+
+.note-block.bronze {
+  border-left-color: var(--bronze-dim);
+  background: rgba(184,118,42,0.022);
+  color: var(--text-secondary);
+  opacity: 1;
+}
+
+/* ─── COVER PAGE ─── */
+.page.cover {
+  justify-content: flex-end;
+  background-color: var(--bg-dark);
+  background-image: radial-gradient(circle, var(--bronze-ghost) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.cover-content {
+  padding: 40px 32px;
+}
+
+.cover-tag {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 500;
+  font-size: 9px;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  color: var(--bronze);
+  margin-bottom: 20px;
+  display: block;
+}
+
+.cover-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 52px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  line-height: 0.88;
+  margin-bottom: 24px;
+}
+
+.cover-subtitle {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  max-width: 310px;
+  border-top: 1px solid var(--rule);
+  padding-top: 20px;
+}
+
+.cover-accent {
+  height: 3px;
+  background: var(--bronze);
+  width: 100%;
+  flex-shrink: 0;
+}
+
+/* ─── CLOSING PAGE ─── */
+.page.closing {
+  background-color: var(--bg-dark);
+  background-image: radial-gradient(circle, var(--bronze-ghost) 1px, transparent 1px);
+  background-size: 22px 22px;
+  justify-content: center;
+}
+
+.closing-content {
+  padding: 40px 32px;
+}
+
+.closing-big {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 44px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  line-height: 0.9;
+  margin-bottom: 28px;
+}
+
+.closing-body {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  border-top: 1px solid var(--rule);
+  padding-top: 24px;
+  margin-bottom: 40px;
+}
+
+.closing-tagline {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  line-height: 2.2;
+}
+
+/* ─── BENCHMARK TRACKER TABLE ─── */
+.tracker-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tracker-table th {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600;
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bronze-dim);
+  padding: 4px 3px;
+  text-align: center;
+  border-bottom: 1px solid var(--rule);
+}
+
+.tracker-table th:first-child {
+  text-align: left;
+  padding-left: 0;
+}
+
+.tracker-table td {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  padding: 5px 3px;
+  text-align: center;
+  border-bottom: 1px solid var(--rule);
+}
+
+.tracker-table td:first-child {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10.5px;
+  color: var(--text-secondary);
+  text-align: left;
+  padding-left: 0;
+}
+
+.tracker-fill {
+  display: inline-block;
+  width: 28px;
+  border-bottom: 1px solid var(--text-tertiary);
+}
+
+/* Glossary */
+.glossary-term {
+  padding: 5px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.glossary-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.glossary-def {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+/* Deload sessions with simplified layout */
+.deload-item {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.deload-item:last-child { border-bottom: none; }
+
+/* Week notes lines */
+.week-note-line {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--rule);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  display: flex;
+  gap: 8px;
+}
+
+.week-note-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  min-width: 50px;
+}
+
+</style>
+</head>
+<body>
+<div class="doc-container">
+
+<!-- ═══ COVER PAGE ═══ -->
+<div class="page cover">
+  <div class="cover-content">
+    <span class="cover-tag">Beginner · Hybrid Training</span>
+    <div class="cover-title">Hybrid<br>Training<br>Acceleration<br>For Beginners</div>
+    <div class="cover-subtitle">A structured 4-week program designed to build your running engine, functional strength, and hybrid training capacity from the ground up. Progressive, purposeful, and built for results.</div>
+  </div>
+  <div class="cover-accent"></div>
+</div>
+
+<!-- ═══ PAGE 1 — BEFORE YOU BEGIN ═══ -->
+<div class="page">
+  <div class="content-header">
+    <span class="content-overline">Start Here</span>
+    <div class="content-title">Before You Begin</div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="content-field">
+    <p class="body-text">This program is more demanding than it might initially appear. Complete this readiness check before starting Week 1.</p>
+    <div class="callout warning">If you answer NO to 3 or more questions, complete the Pre-Conditioning Phase before starting Week 1. There is no shame in this — it is the smarter, faster path to results.</div>
+    <div class="checklist-item"><div class="checkbox"></div><span>Can you walk briskly for 20 continuous minutes without joint pain or significant breathlessness?</span></div>
+    <div class="checklist-item"><div class="checkbox"></div><span>Can you perform 5 bodyweight squats to full depth (thighs parallel or below) without knee or hip pain?</span></div>
+    <div class="checklist-item"><div class="checkbox"></div><span>Can you perform 5 kneeling push-ups with your chest touching the floor on each rep?</span></div>
+    <div class="checklist-item"><div class="checkbox"></div><span>Can you hold a forearm plank for at least 20 seconds with hips level?</span></div>
+    <div class="checklist-item"><div class="checkbox"></div><span>Are you currently free from any acute injury, chronic joint pain, or medical condition that may be worsened by high-intensity exercise?</span></div>
+    <p class="body-text" style="margin-top:10px">This program will challenge you. Weeks 1–2 build your foundation. Weeks 3–4 push your capacity in ways that will surprise you. Expect soreness after the first two sessions. Expect your running to feel harder before it feels easier. That is normal. That is adaptation.</p>
+    <p class="body-text">If at any point a session feels genuinely unsafe — not just hard — reduce load, reduce distance, or rest. An injured beginner makes no progress at all.</p>
+  </div>
+  <div class="page-footer"><span class="footer-pg">01</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ PAGE 2 — RPE SCALE + NO EGO LOADING ═══ -->
+<div class="page">
+  <div class="content-header">
+    <span class="content-overline">Training Language</span>
+    <div class="content-title">RPE Scale + Loading Rules</div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="content-field">
+    <p class="body-text">This program uses RPE (Rate of Perceived Exertion) to guide run intensity, and relative load descriptors (Light / Moderate / Heavy) for weights.</p>
+    <div class="rpe-row"><span class="rpe-num">4–5</span><span class="rpe-label">Easy</span><span>Conversational. Full sentence. Opening run pace.</span></div>
+    <div class="rpe-row"><span class="rpe-num">6–7</span><span class="rpe-label">Moderate</span><span>Short phrases only. Uncomfortable but sustainable.</span></div>
+    <div class="rpe-row"><span class="rpe-num">8–9</span><span class="rpe-label">Hard</span><span>One-word answers. You are working. Finishers and final runs.</span></div>
+    <div class="rpe-row"><span class="rpe-num">10</span><span class="rpe-label">Max</span><span>Everything you have. Final run of Week 4 benchmark only.</span></div>
+    <div class="content-rule"></div>
+    <div class="section-label">No Ego Loading</div>
+    <div class="callout warning">This is the most important rule in this program. Never load a movement beyond what your form can support for the full set. A heavy weight with bad form is not strength training — it is injury queuing. If your technique breaks on rep 4 of 8, the weight is too heavy. Reduce it. Come back heavier when you have earned it.</div>
+    <p class="small-italic">This reminder appears again when loads get heavy in Week 3. That is intentional. That is when egos get in the way.</p>
+  </div>
+  <div class="page-footer"><span class="footer-pg">02</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ PAGE 3 — PRE-CONDITIONING PHASE ═══ -->
+<div class="page">
+  <div class="content-header">
+    <span class="content-overline">Optional Foundation Week</span>
+    <div class="content-title">Pre-Conditioning Phase</div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="content-field">
+    <p class="body-text">Complete this 3-day week if your readiness check flagged concerns. Purpose: expose your joints, tendons, and cardiovascular system to movement patterns before volume increases. No benchmarks. No pressure. Just movement.</p>
+    <div class="callout">Rest at least one full day between each session. Suggested: Mon / Wed / Fri or Tue / Thu / Sat.</div>
+    <div class="section-label">Day 1 — Bodyweight Patterns</div>
+    <div class="list-item">10 × Bodyweight Squat (3 sec down) · 10 × Reverse Lunge each leg · 10 × Kneeling Push-Up · 15 × Glute Bridge (2s hold) · 10 × Dead Bug each side · 30s Plank Hold — 2 rounds, 60s rest between</div>
+    <div class="section-label">Day 2 — Carry + Run Exposure</div>
+    <div class="list-item">10 min easy walk/jog (RPE 3–4) · 3 × 20m Farmers Carry or 30s march holding any weight · 3 × 20m Bear Hug walk with any heavy load · 5 min easy jog to finish</div>
+    <div class="section-label">Day 3 — Full Body Circuit</div>
+    <div class="list-item">2 rounds: 8 Goblet Squat + 8 KB Row each arm + 8 Reverse Lunge each + 8 Kneeling Push-Up + 10 Glute Bridge · 10 min walk at RPE 3 to finish · Note how each movement feels — this is your baseline</div>
+  </div>
+  <div class="page-footer"><span class="footer-pg">03</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ PAGE 4 — THE SCIENCE: WHY THIS WORKS ═══ -->
+<div class="page">
+  <div class="content-header">
+    <span class="content-overline">The Science</span>
+    <div class="content-title">Why This Works</div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="content-field">
+    <p class="body-text">You do not need a degree to understand why this program produces results. Here is the honest explanation — in plain language.</p>
+    <div class="section-label">The Beginner Advantage</div>
+    <p class="body-text">When you are new to structured training, your body adapts faster than at any other point in your life. Not because you are special — because your nervous system has never been asked to do this before. In the first weeks of training, most strength gains come not from bigger muscles but from your brain learning to switch on the right muscles, in the right order, at the right time. This is neuromuscular efficiency — and it improves rapidly in beginners.</p>
+    <div class="section-label">The Concurrent Training Effect</div>
+    <p class="body-text">Hybrid training combines running and strength work. When programmed correctly, they produce complementary adaptations — not interference. Running develops your cardiovascular engine and lactate threshold. Strength work develops muscles, connective tissue, and power output. Together they build an athlete capable across all demands.</p>
+    <div class="section-label">VO2 Max + Lactate Threshold</div>
+    <p class="body-text">Your VO2 max is your engine ceiling — the maximum rate your body can use oxygen. Your lactate threshold is the effort level where waste products accumulate faster than they clear. This program trains both. Over 4 weeks, an effort that felt like RPE 8 in Week 1 feels like RPE 6 in Week 4. That is measurable fitness.</p>
+  </div>
+  <div class="page-footer"><span class="footer-pg">04</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ PAGE 5 — WHO THIS PROGRAM IS FOR ═══ -->
+<div class="page">
+  <div class="content-header">
+    <span class="content-overline">Who This Is For</span>
+    <div class="content-title">Every Kind of Beginner</div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="content-field">
+    <p class="body-text">This program is labeled for beginners — but beginner means new to hybrid training specifically, not necessarily unfit.</p>
+    <div class="section-label">The Gym Athlete with No Cardio</div>
+    <p class="body-text">You lift regularly. You have strength. But sustained movement gasses you out. This program will reveal and fix that gap faster than you expect. Expect humility on runs in Weeks 1–2 and rapid adaptation by Weeks 3–4.</p>
+    <div class="section-label">The Runner with No Strength</div>
+    <p class="body-text">Your engine is real. But you have no meaningful strength for carries, wall balls, or loaded squats. This program adds functional strength that directly improves your running — not despite the lifting, but because of it.</p>
+    <div class="section-label">The Active Person Transitioning</div>
+    <p class="body-text">You play sport, train inconsistently, move well enough. You want structure and a goal. The hybrid format will likely be the most complete physical training you have done.</p>
+    <div class="section-label">What All Three Have in Common</div>
+    <p class="body-text">Regardless of background, everyone entering a hybrid program for the first time is a beginner in this context. Respect the foundation weeks — movement quality built early is what protects you when the loads get heavy.</p>
+  </div>
+  <div class="page-footer"><span class="footer-pg">05</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ PAGE 6 — YOUR COMMITMENT ═══ -->
+<div class="page">
+  <div class="content-header">
+    <span class="content-overline">Before You Start</span>
+    <div class="content-title">Your Commitment</div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="content-field">
+    <p class="body-text">This is not a casual program. Before you begin, we are asking for something specific from you.</p>
+    <div class="section-label">What This Requires</div>
+    <div class="list-item">6 structured training days per week for 4 weeks</div>
+    <div class="list-item">Honest effort in every session — not max effort, but genuine effort</div>
+    <div class="list-item">Consistent sleep and adequate protein — these are not optional extras</div>
+    <div class="list-item">A timer at every session</div>
+    <div class="list-item">Honest load selection — weights that challenge without compromising form</div>
+    <div class="list-item">Showing up on the hard days. Specifically the days when you do not feel like it.</div>
+    <div class="section-label">What to Accept</div>
+    <div class="list-item">You will be sore in Week 1. Soreness is information, not injury.</div>
+    <div class="list-item">Some sessions will feel worse than others. That is not regression — it is training a fatigued body.</div>
+    <div class="list-item">Week 3 will feel harder than Week 2. That is by design.</div>
+    <div class="callout">If you are ready to commit to 4 weeks of progressive, demanding work — start Week 1. If you are not ready, complete the Pre-Conditioning Phase first. There is no right time except when you are genuinely committed.</div>
+  </div>
+  <div class="page-footer"><span class="footer-pg">06</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ PAGE 7 — PROGRAM OVERVIEW ═══ -->
+<div class="page">
+  <div class="content-header">
+    <span class="content-overline">Program Overview</span>
+    <div class="content-title">Training Philosophy</div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="content-field">
+    <p class="body-text">Hybrid training combines cardiovascular endurance with functional strength — running alongside carries, squats, wall balls, and loaded movements. The result is a body capable across all demands. Think of it as building an engine and the chassis that carries it.</p>
+    <div class="callout"><strong style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;color:var(--text-primary);display:block;margin-bottom:3px">Progressive Overload</strong>Every week, something increases: reps, sets, load, or distance. Adaptation only happens when the body is challenged beyond what it already knows.</div>
+    <div class="callout"><strong style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;color:var(--text-primary);display:block;margin-bottom:3px">Movement Quality First</strong>We build from bodyweight and light load, drilling patterns until they are automatic. Load follows form — never the other way.</div>
+    <div class="callout"><strong style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;color:var(--text-primary);display:block;margin-bottom:3px">Specificity</strong>Every exercise has direct carryover to hybrid training demands. We train carries, squats, lunges, wall balls, and running — because those are the movements that matter.</div>
+    <div class="section-label">Goals</div>
+    <div class="list-item">1. Full-body strength</div>
+    <div class="list-item">2. Running economy</div>
+    <div class="list-item">3. Athletic physique building</div>
+    <div class="list-item">4. Hybrid training capacity</div>
+  </div>
+  <div class="page-footer"><span class="footer-pg">07</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ PAGE 8 — WEEKLY STRUCTURE + PROGRESSION ═══ -->
+<div class="page">
+  <div class="content-header">
+    <span class="content-overline">Structure</span>
+    <div class="content-title">Weekly Layout + Progression</div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="content-field">
+    <div class="day-row"><span class="day-pill">MON</span><span class="day-row-title">Upper Body Strength</span><span>Pushing, pulling, shoulder stability.</span></div>
+    <div class="day-row"><span class="day-pill">TUE</span><span class="day-row-title">Hybrid Conditioning</span><span>Mixed-modal circuit — wall balls, lunges, carries, running.</span></div>
+    <div class="day-row"><span class="day-pill">WED</span><span class="day-row-title">Lower Body Strength</span><span>Glutes, quads, hamstrings. Joint-safe progressions.</span></div>
+    <div class="day-row"><span class="day-pill">THU</span><span class="day-row-title">Active Recovery</span><span>Your choice — Z2 run, sport, yoga, walk.</span></div>
+    <div class="day-row"><span class="day-pill">FRI</span><span class="day-row-title">Full Body Power + Core</span><span>KB swings, Zercher squats, carries, core stability.</span></div>
+    <div class="day-row"><span class="day-pill">SAT</span><span class="day-row-title">Benchmark Session</span><span>Run-station circuits simulating hybrid demands.</span></div>
+    <div class="day-row"><span class="day-pill">SUN</span><span class="day-row-title">Rest</span><span>Full rest. No structured training. Sleep is where you grow.</span></div>
+    <div class="content-rule"></div>
+    <div class="section-label">4-Week Progression</div>
+    <div class="prog-block"><span class="prog-num">1</span><div><div class="prog-title">Foundation</div><div class="prog-desc">Learn every pattern. 3 sets, moderate volume. Earn the right to go heavier.</div></div></div>
+    <div class="prog-block"><span class="prog-num">2</span><div><div class="prog-title">Build</div><div class="prog-desc">+1 set on key movements. Tempo work. Less rest. You will feel the difference.</div></div></div>
+    <div class="prog-block"><span class="prog-num">3</span><div><div class="prog-title">Intensify</div><div class="prog-desc">Heavy barbell introduced. Higher volume. New stations. No ego loading.</div></div></div>
+    <div class="prog-block"><span class="prog-num">4</span><div><div class="prog-title">Test Week</div><div class="prog-desc">Benchmarks. Max tests. Full benchmark session. Measure your transformation.</div></div></div>
+    <p class="small-note">Week 5 — Deload &amp; Re-Test is available after Week 4.</p>
+  </div>
+  <div class="page-footer"><span class="footer-pg">08</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ PAGE 9 — EQUIPMENT GUIDE (Part 1) ═══ -->
+<div class="page">
+  <div class="content-header">
+    <span class="content-overline">Equipment</span>
+    <div class="content-title">Selecting Your Loads</div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="content-field">
+    <p class="body-text">You do not need a private gym. Every piece of equipment listed is available in most commercial gyms. The program is rack-free intentionally — it works on a gym floor, in a garage, or in any open space with basic weights.</p>
+    <div class="section-label">Timer — Non-Negotiable</div>
+    <p class="body-text">Bring a timer to every session. Many sessions involve timed finishers, benchmark efforts, and station rest periods. Recommended: a sports watch or phone showing both lap time and total elapsed time. Any visible timer works — the important thing is that you have one.</p>
+    <div class="section-label">Running</div>
+    <p class="body-text">Runs can be done outside or on a treadmill. On a treadmill, set incline to 1.0–1.5%. This compensates for the lack of wind resistance and makes effort equivalent to outdoor running.</p>
+    <div class="content-rule"></div>
+    <div class="section-label">Load Tiers — How to Self-Test</div>
+    <div class="principle"><div class="principle-title">Kettlebell Light (single-arm press)</div><div class="principle-body">Press bell overhead with one arm. If reps 7–8 of 8 are hard but form holds with zero lean — this is your light bell.</div></div>
+    <div class="principle"><div class="principle-title">Kettlebell Moderate (goblet squat, carries)</div><div class="principle-body">10 goblet squats. If reps 8–10 are genuinely hard but chest stays up — this is your moderate bell.</div></div>
+    <div class="principle"><div class="principle-title">Kettlebell Heavy (KB swings)</div><div class="principle-body">10 two-hand KB swings. If last 3 reps require a real explosive hip snap — this is your heavy bell.</div></div>
+  </div>
+  <div class="page-footer"><span class="footer-pg">09</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ PAGE 10 — EQUIPMENT GUIDE (Part 2) ═══ -->
+<div class="page">
+  <div class="content-header">
+    <span class="content-overline">Equipment (Cont.)</span>
+    <div class="content-title">Barbells, Sandbag + Distance Table</div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="content-field">
+    <div class="principle"><div class="principle-title">Barbell Moderate + Heavy</div><div class="principle-body">Two loads needed. Moderate for Weeks 1–2. Heavy from Week 3. Moderate ≈ 30–40% bodyweight. Heavy ≈ 60–80%. Use the self-tests, not the percentages, as your guide.</div></div>
+    <div class="principle"><div class="principle-title">Sandbag</div><div class="principle-body">Competition standard is 20kg (men) / 10kg (women). For training, use a weight where lunge technique holds for the full distance. Start at 10–15kg if needed. Build toward competition weight by Weeks 3–4.</div></div>
+    <div class="principle"><div class="principle-title">Med Ball</div><div class="principle-body">6kg men · 4kg women. Use lighter if that is all available — focus on technique.</div></div>
+    <div class="section-label">Why No Squat Rack</div>
+    <p class="body-text">This program uses Zercher squats and goblet squats, not back squats from a rack. This is a deliberate choice. The Zercher squat — bar in elbow crooks — teaches you to brace and hold load in front of your body, which is exactly what carrying a sandbag demands. The goblet squat teaches upright torso and controlled depth from the inside out. Both movements translate directly to hybrid training performance. Choose them with confidence.</p>
+    <div class="content-rule"></div>
+    <div class="section-label">Distance-to-Reps Conversion</div>
+    <div class="list-item"><strong style="color:var(--text-primary);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px">Sandbag Lunges:</strong> 50m = ~30 reps/leg · 60m = ~38 · 80m = ~50 · 100m = ~60</div>
+    <div class="list-item"><strong style="color:var(--text-primary);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px">Farmers Carry:</strong> 30m = ~30s · 40m = ~40s · 100m = ~90s · 120m = ~2 min · 150m = ~2:30 · 200m = ~3 min</div>
+    <p class="small-note">For in-place carries: hold bells at sides, march with full steps, upright posture throughout.</p>
+  </div>
+  <div class="page-footer"><span class="footer-pg">10</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ PAGE 11 — JOINT PROTECTION ═══ -->
+<div class="page">
+  <div class="content-header">
+    <span class="content-overline">Safety</span>
+    <div class="content-title">Joint Protection &amp; Movement Safety</div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="content-field">
+    <p class="body-text">Beginner programs fail most often not from lack of effort, but from load applied to joints that have not yet been conditioned. These principles are non-negotiable.</p>
+    <div class="principle"><div class="principle-title">Reverse Lunges Before Forward Lunges</div><div class="principle-body">Stepping backward keeps the shin vertical, reducing knee shear force. Forward lunges are introduced in Week 3 only, after two weeks of joint conditioning.</div></div>
+    <div class="principle"><div class="principle-title">Goblet Before Heavy Barbell</div><div class="principle-body">Goblet squat teaches upright torso and depth before load increases. Zercher squats progress from moderate in Weeks 1–2 to heavy only in Week 3.</div></div>
+    <div class="principle"><div class="principle-title">Hip-Dominant Posterior Chain</div><div class="principle-body">RDLs, KB swings, glute bridges, and hip thrusts protect the knee and lower back. They are the structural foundation of this program.</div></div>
+    <div class="principle"><div class="principle-title">Warm Up Every Session</div><div class="principle-body">Every session begins with a 5-minute warmup. Cold joints under sudden load are vulnerable joints. The warmup is not optional filler.</div></div>
+    <div class="principle"><div class="principle-title">Pain vs. Discomfort</div><div class="principle-body">Muscle burn and breathlessness are discomfort — that is training. Sharp, joint-specific pain is a signal to stop. Reduce range first, then load.</div></div>
+    <div class="callout warning">Single-arm KB pressing always uses the light bell, every week. The shoulder is complex and high-injury when overloaded without a stability foundation.</div>
+  </div>
+  <div class="page-footer"><span class="footer-pg">11</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ PAGE 12 — MISSING SESSIONS + NUTRITION ═══ -->
+<div class="page">
+  <div class="content-header">
+    <span class="content-overline">Life Happens</span>
+    <div class="content-title">Missing Sessions + Scaling</div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="content-field">
+    <div class="section-label">If You Miss a Session</div>
+    <div class="principle"><div class="principle-title">Missed 1 Day</div><div class="principle-body">Shift week forward by one day. If Saturday benchmark falls off, skip it. Never double up strength days.</div></div>
+    <div class="principle"><div class="principle-title">Missed 2–3 Days</div><div class="principle-body">Resume from where you left off. If more than half the week is missed, repeat that week before advancing.</div></div>
+    <div class="principle"><div class="principle-title">Missed the Whole Week</div><div class="principle-body">Repeat Week 1 regardless of which week you were on. One week off requires a reset.</div></div>
+    <div class="principle"><div class="principle-title">Missed Saturday</div><div class="principle-body">Don't attempt benchmark mid-week. Continue to next week and note the gap.</div></div>
+    <div class="section-label">Scaling Within Sessions</div>
+    <div class="principle"><div class="principle-title">Too Heavy</div><div class="principle-body">Form breaks before final 2 reps: drop one load tier. Complete set with good form.</div></div>
+    <div class="principle"><div class="principle-title">Too Easy</div><div class="principle-body">Add 2 reps per set, not more weight. Volume before load, always.</div></div>
+    <div class="principle"><div class="principle-title">Running Too Hard</div><div class="principle-body">Slow by 1 RPE point. Station performance matters more than run time.</div></div>
+    <div class="principle"><div class="principle-title">Can't Finish</div><div class="principle-body">Stop cleanly. Record what you completed. Attempt next session normally.</div></div>
+    <div class="content-rule"></div>
+    <div class="section-label">Nutrition Basics</div>
+    <div class="principle"><div class="principle-title">Protein</div><div class="principle-body">1.6–2.0g per kg bodyweight daily. Lean meat, eggs, yogurt, legumes, shakes.</div></div>
+    <div class="principle"><div class="principle-title">Hydration</div><div class="principle-body">2–3 litres per day minimum. More on training days. Drink before thirst.</div></div>
+    <div class="principle"><div class="principle-title">Carbohydrates</div><div class="principle-body">Do not fear them. Glycogen powers hybrid conditioning. Rice, oats, sweet potato around sessions.</div></div>
+    <div class="principle"><div class="principle-title">Sleep</div><div class="principle-body">7–9 hours non-negotiable. Growth hormone and muscle repair happen during sleep.</div></div>
+  </div>
+  <div class="page-footer"><span class="footer-pg">12</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ WEEK 1 OPENER ═══ -->
+<div class="page week-opener">
+  <div class="week-opener-accent"></div>
+  <span class="week-opener-numeral">01</span>
+  <div class="week-opener-content">
+    <div class="week-opener-overline">Week 1</div>
+    <div class="week-opener-title">Foundation</div>
+    <div class="week-opener-desc">Learn every pattern with intention. The reps are lower, the rest is longer, and that is by design. Your job this week is to earn the right to train harder — by doing the basics so well that more weight becomes inevitable.</div>
+  </div>
+</div>
+
+<!-- ═══ W1 MONDAY — UPPER BODY STRENGTH ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Monday · Week 1</span>
+        <div class="day-title">Upper Body<br>Strength</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Foundation · Day 01 / 28</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> Brace your core on every pressing rep — even kneeling. A soft core is wasted effort.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">Arm circles, 10 fwd + 10 back each arm, big range</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Cross-body arm swings, open wide, thoracic spine rotates</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Inchworms in place, walk to plank, hold 2s, walk back, 4–5 reps</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Kneeling push-up holds, lower to 2 inches, hold 3s, push up, 5 reps</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Scapular wall slides, goalpost arms, slide overhead keeping wall contact</span></div>
+    </div>
+  </div>
+  <div class="content-area"><div class="ex-list">
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">A</span><div><span class="ex-name">Kneeling Push-Ups</span><span class="ex-mod-spacer"></span></div></div><div class="ex-params"><span class="ex-sets">3 × 8–10</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Chest to floor every rep. Squeeze glutes, brace core. One rigid line knee to shoulder.</div><div class="ex-error"><span class="label">Error</span>Hips sagging or shooting up — you've broken tension. Reset before next rep.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">B</span><div><span class="ex-name">Barbell Bent-Over Row</span><span class="ex-mod">Moderate bar</span></div></div><div class="ex-params"><span class="ex-sets">3 × 10</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Hinge to 45°, pull to lower ribs, hold 1s, control all the way down.</div><div class="ex-error"><span class="label">Error</span>Rounding the lower back — brace hard before every single pull.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">C</span><div><span class="ex-name">KB Overhead Press</span><span class="ex-mod">Light bell · each arm</span></div></div><div class="ex-params"><span class="ex-sets">3 × 8</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Full lockout overhead. Ribs down. Zero lean-back whatsoever.</div><div class="ex-error"><span class="label">Error</span>Tilting sideways — if you lean, the bell is too heavy. Light bell only, always.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">D</span><div><span class="ex-name">KB Upright Row</span><span class="ex-mod">Moderate bell</span></div></div><div class="ex-params"><span class="ex-sets">3 × 10</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Elbows high above wrists. Brief pause at top. Slow, controlled descent.</div><div class="ex-error"><span class="label">Error</span>Swinging with momentum — deliberate and slow builds the muscle.</div></div>
+    </div>
+    <div class="ex-item finisher">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">E</span><div><span class="ex-name">Finisher</span><span class="ex-mod">Push-Up Negatives + Towel Pinch Hold</span></div></div><div class="ex-params"><span class="ex-sets">3 rounds</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue">5 × negatives from toes (4s lower, drop to knees, push back up) + 20s towel pinch maximum grip. Record your push-up variation.</div></div>
+    </div>
+  </div></div>
+  <div class="page-footer"><span class="footer-pg">13</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W1 TUESDAY — HYBRID CONDITIONING ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Tuesday · Week 1</span>
+        <div class="day-title">Hybrid<br>Conditioning</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Foundation · Day 02 / 28</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> First conditioning session should feel almost too easy. Resist the urge to go harder.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">High knees, drive to hip height, arms pumping, controlled pace</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Leg swings in place, front-back 10 each, then lateral 10 each leg</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Hip circles, hands on hips, 8 large circles each direction</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Bodyweight squat pulses, sit in squat, pulse 10 times, stand, 3 rounds</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Butt kicks 20 reps + lateral shuffle in place 10 each direction</span></div>
+    </div>
+  </div>
+  <div class="content-area"><div class="ex-list">
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">A</span><div><span class="ex-name">Run 800m</span><span class="ex-mod">Easy, conversational pace</span></div></div><div class="ex-params"><span class="ex-sets">RPE 4–5</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Hold a full sentence throughout. This run builds your aerobic engine — not a race.</div><div class="ex-error"><span class="label">Error</span>Going too fast. If breathless, slow down. Starting easy is a practiced skill.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">B</span><div><span class="ex-name">Wall Balls</span><span class="ex-mod">Light med ball</span></div></div><div class="ex-params"><span class="ex-sets">3 × 8</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Squat deep, drive through heels, throw to 3m target from legs — not arms.</div><div class="ex-error"><span class="label">Error</span>Arms doing all the work — the squat drives the throw. Arms only guide.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">C</span><div><span class="ex-name">Sandbag Lunges</span><span class="ex-mod">20kg or training weight</span></div></div><div class="ex-params"><span class="ex-sets">3 × 8 each</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Wrap arms around bag. Step forward, back knee kisses ground. Drive front heel.</div><div class="ex-error"><span class="label">Error</span>Knee caving inward — drive knee out over pinky toe on every rep.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">D</span><div><span class="ex-name">KB Farmers Carry</span><span class="ex-mod">2 × light/moderate bells</span></div></div><div class="ex-params"><span class="ex-sets">3 × 30m</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Tall posture. Grip hard. Shoulders packed down. Walk with purpose.</div><div class="ex-error"><span class="label">Error</span>Tilting to one side — hips level, shoulders neutral the entire carry.</div></div>
+    </div>
+    <div class="ex-item finisher">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">E</span><div><span class="ex-name">Finisher</span><span class="ex-mod">10 Wall Balls + 200m Run</span></div></div><div class="ex-params"><span class="ex-sets">1 round</span><span class="ex-rest">For time</span></div></div>
+      <div class="ex-cues"><div class="ex-cue">Start timer. Record total time. This is your first conditioning benchmark.</div></div>
+    </div>
+  </div></div>
+  <div class="page-footer"><span class="footer-pg">14</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W1 WEDNESDAY — LOWER BODY STRENGTH ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Wednesday · Week 1</span>
+        <div class="day-title">Lower Body<br>Strength</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Foundation · Day 03 / 28</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> The RDL and glute bridge build the posterior chain that makes every run and lunge safer.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">Bodyweight squats, 3s down, chest up, heels grounded, 10–12 reps</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Glute bridges, drive through heels, hold 2s at top, 12–15 reps</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Leg swings, front-back 10 each, then lateral 10 each leg</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Ankle circles 10 each direction each foot + 15 slow calf raises</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Deep lunge holds, step forward, hold 5s hip flexor stretch, 4 each side</span></div>
+    </div>
+  </div>
+  <div class="content-area"><div class="ex-list">
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">A</span><div><span class="ex-name">Goblet Squat</span><span class="ex-mod">Moderate KB</span></div></div><div class="ex-params"><span class="ex-sets">3 × 10</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Bell at chest, heels down, elbows inside knees. Sit all the way down. Stand tall.</div><div class="ex-error"><span class="label">Error</span>Heels lifting off — place plate under heels temporarily, work on ankle mobility.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">B</span><div><span class="ex-name">Romanian Deadlift</span><span class="ex-mod">Moderate barbell</span></div></div><div class="ex-params"><span class="ex-sets">3 × 10</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Soft knees, push hips back like closing a drawer. Feel hamstring stretch.</div><div class="ex-error"><span class="label">Error</span>Rounding lower back — hinge is at the hips, not the waist. Reduce load if it rounds.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">C</span><div><span class="ex-name">Reverse Lunges</span><span class="ex-mod">Bodyweight</span></div></div><div class="ex-params"><span class="ex-sets">3 × 10 each</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Step BACKWARD — keeps shin vertical, protects the knee. Stand fully between reps.</div><div class="ex-error"><span class="label">Error</span>Leaning forward at torso — chest proud, weight through front heel throughout.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">D</span><div><span class="ex-name">Glute Bridge</span><span class="ex-mod">Bodyweight</span></div></div><div class="ex-params"><span class="ex-sets">3 × 15</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Drive through heels, not toes. Squeeze glutes hard at top for 2 full seconds.</div><div class="ex-error"><span class="label">Error</span>Driving through ball of foot — keep weight in heels. Feel it only in glutes.</div></div>
+    </div>
+    <div class="ex-item finisher">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">E</span><div><span class="ex-name">Finisher</span><span class="ex-mod">Goblet Squats + Reverse Lunges</span></div></div><div class="ex-params"><span class="ex-sets">2 rounds</span><span class="ex-rest">Rest 30s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue">10 Goblet Squats + 10 Reverse Lunges each leg. No rest between movements.</div></div>
+    </div>
+  </div></div>
+  <div class="page-footer"><span class="footer-pg">15</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W1 THURSDAY — ACTIVE RECOVERY ═══ -->
+<div class="page dark-page">
+  <div class="week-opener-accent"></div>
+  <div class="dark-content">
+    <span class="dark-overline">Thursday · Week 1</span>
+    <div class="dark-title">Active Recovery</div>
+    <div class="header-rule"></div>
+    <p class="dark-intro">Today is not rest and not training. It is an adaptation day. Light movement increases blood flow to worked muscles, accelerating repair. Choose one option based on how your body feels.</p>
+    <div class="recovery-option">
+      <span class="recovery-icon">🏃</span>
+      <div><div class="recovery-title">Zone 2 Run or Walk</div><div class="recovery-desc">20–40 min at RPE 3–4. Full conversation throughout. Builds aerobic base without adding fatigue.</div></div>
+    </div>
+    <div class="recovery-option">
+      <span class="recovery-icon">🎾</span>
+      <div><div class="recovery-title">Play a Sport</div><div class="recovery-desc">Tennis, pickleball, basketball. Unstructured athletic movement is excellent recovery. Not a competition day.</div></div>
+    </div>
+    <div class="recovery-option">
+      <span class="recovery-icon">🧘</span>
+      <div><div class="recovery-title">Yoga or Mobility</div><div class="recovery-desc">30–45 min on hip flexors, hamstrings, thoracic spine, shoulders. These are the areas loaded most this week.</div></div>
+    </div>
+    <div class="recovery-option">
+      <span class="recovery-icon">🚶</span>
+      <div><div class="recovery-title">Extended Walk</div><div class="recovery-desc">30–60 min. Simple, effective, underrated. Zero meaningful training stress.</div></div>
+    </div>
+    <p class="dark-note">Not feeling any of these? Full rest is always the right call if your body genuinely needs it.</p>
+  </div>
+  <div class="page-footer"><span class="footer-pg">16</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W1 FRIDAY — FULL BODY POWER + CORE ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Friday · Week 1</span>
+        <div class="day-title">Full Body<br>Power + Core</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Foundation · Day 05 / 28</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> Record your push-up numbers today. Progress is only visible if you documented the start.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">March in place building pace, knees to hip height by end of minute</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Inchworms in place, hinge, walk to plank, hold 2s, walk back, stand</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Hip circles 8 each direction + slow hip hinges, feel hamstring each time</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Squat jumps 10 reps (low-impact option: squat and rise to toes)</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Arm crosses + torso rotations, swing arms open, rotate side to side</span></div>
+    </div>
+  </div>
+  <div class="content-area"><div class="ex-list">
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">A</span><div><span class="ex-name">KB Swings</span><span class="ex-mod">Heavy bell</span></div></div><div class="ex-params"><span class="ex-sets">4 × 12</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Hinge at hips, not knees. Snap hips forward explosively. Arms follow the bell.</div><div class="ex-error"><span class="label">Error</span>Squatting down on backswing — hips back, chest down. Not a squat.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">B</span><div><span class="ex-name">Push-Ups Max Reps</span><span class="ex-mod">Best available variation</span></div></div><div class="ex-params"><span class="ex-sets">3 × max</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Hardest variation you can hold for 5+ reps. Record every set — this is your baseline.</div><div class="ex-error"><span class="label">Error</span>Partial range of motion — chest must approach the floor. Partial reps are not reps.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">C</span><div><span class="ex-name">Zercher Squat</span><span class="ex-mod">Moderate barbell</span></div></div><div class="ex-params"><span class="ex-sets">3 × 8</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Bar in elbow crooks. Elbows high, chest proud. Squat deep, drive to full extension.</div><div class="ex-error"><span class="label">Error</span>Elbows dropping forward — front rack tension broke. Reset before each rep.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">D</span><div><span class="ex-name">Sandbag Bear Hug Carry</span><span class="ex-mod-spacer"></span></div></div><div class="ex-params"><span class="ex-sets">3 × 30m</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Arms around bag at mid-torso. Walk tall. Full trunk engaged — breathe through nose.</div><div class="ex-error"><span class="label">Error</span>Hunching over the bag — stay upright. Collapsed posture under load is punished here.</div></div>
+    </div>
+    <div class="ex-item finisher">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">E</span><div><span class="ex-name">Finisher</span><span class="ex-mod">Dead Bug + Plank</span></div></div><div class="ex-params"><span class="ex-sets">3 rounds</span><span class="ex-rest">Rest 30s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue">8 Dead Bug each side (low back flat, slow) + 30s Plank Hold. No rest between movements.</div></div>
+    </div>
+  </div></div>
+  <div class="page-footer"><span class="footer-pg">17</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W1 SATURDAY — BENCHMARK SESSION ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Saturday · Week 1</span>
+        <div class="day-title">Benchmark<br>Session</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Foundation · Day 06 / 28</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> Negative splits win. Start slower than you think — your second half will be stronger.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">March in place at easy pace (RPE 3)</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Leg swings 30s + hip circles 30s</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Bodyweight squats, 10 slow reps</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Deep lunge holds, 4 each side, 3s hold</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Build march to light jog in place, RPE 4 by end</span></div>
+    </div>
+  </div>
+  <div class="benchmark-list">
+    <p class="benchmark-note">Start your timer when Run 1 begins. Lap every segment.</p>
+    <div class="benchmark-border">
+      <div class="run-row"><span class="run-pill">Run 1</span><span class="run-dist">1km</span><span class="run-note">RPE 4–5 · Find your rhythm. Don't go out too fast.</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="station-row"><div><span class="station-name">Wall Balls</span><div class="station-rest">Rest 90s · Smooth and steady. Breathe at the top.</div></div><span class="station-reps">15 reps</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="run-row"><span class="run-pill">Run 2</span><span class="run-dist">1km</span><span class="run-note">RPE 4–5 · Match your first split. Consistency is the goal.</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="station-row"><div><span class="station-name">Sandbag Lunges</span><div class="station-rest">Rest 90s · Bear hug. Back knee down.</div></div><span class="station-reps">50m / 30 reps</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="run-row"><span class="run-pill">Run 3</span><span class="run-dist">800m</span><span class="run-note">RPE 6 · Shorter distance, slightly faster.</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="station-row"><div><span class="station-name">Farmers Carry</span><div class="station-rest">Rest 90s · Walk tall, grip hard.</div></div><span class="station-reps">100m / 90s</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="run-row"><span class="run-pill">Run 4</span><span class="run-dist">400m</span><span class="run-note">RPE 7–8 · Push the pace. Practice finishing strong.</span></div>
+    </div>
+    <p class="benchmark-note">Stop timer. Record total time. This is your Week 1 benchmark — your Week 4 and 5 sessions will use the same format for true comparison.</p>
+  </div>
+  <div class="page-footer"><span class="footer-pg">18</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ WEEK 2 OPENER ═══ -->
+<div class="page week-opener">
+  <div class="week-opener-accent"></div>
+  <span class="week-opener-numeral">02</span>
+  <div class="week-opener-content">
+    <div class="week-opener-overline">Week 2</div>
+    <div class="week-opener-title">Build</div>
+    <div class="week-opener-desc">One more set on the movements that matter. Less rest on the conditioning work. Your body adapted last week — now give it a new problem to solve. Stay disciplined and don't jump ahead of the program.</div>
+  </div>
+</div>
+
+<!-- ═══ W2 MONDAY — UPPER BODY STRENGTH ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Monday · Week 2</span>
+        <div class="day-title">Upper Body<br>Strength</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Build · Day 08 / 28</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> Pushing from toes is harder than kneeling — that gap is where your strength lives.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">Arm circles, 10 fwd + 10 back each arm, big range</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Cross-body arm swings, open wide, thoracic spine rotates</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Inchworms in place, walk to plank, hold 2s, walk back, 4–5 reps</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Kneeling push-up holds, lower to 2 inches, hold 3s, push up, 5 reps</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Scapular wall slides, goalpost arms, slide overhead keeping wall contact</span></div>
+    </div>
+  </div>
+  <div class="content-area"><div class="ex-list">
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">A</span><div><span class="ex-name">Push-Ups from Toes</span><span class="ex-mod-spacer"></span></div></div><div class="ex-params"><span class="ex-sets">4 × 6–8</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Max from toes, drop to knees to complete set. No rest between — builds the bridge.</div><div class="ex-error"><span class="label">Error</span>Stopping when toes get hard — the knees are there to let you finish. Use them.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">B</span><div><span class="ex-name">Barbell Bent-Over Row</span><span class="ex-mod">Moderate bar · +1 set</span></div></div><div class="ex-params"><span class="ex-sets">4 × 10</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Squeeze at top for 1 second every rep. The added set is where Week 2 muscle is built.</div><div class="ex-error"><span class="label">Error</span>Added set compromising form — if back rounds on set 4, reduce load slightly.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">C</span><div><span class="ex-name">KB Overhead Press</span><span class="ex-mod">Light bell · each arm</span></div></div><div class="ex-params"><span class="ex-sets">3 × 8</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Same light bell as Week 1. Perfect lockout, zero torso deviation. Volume before load.</div><div class="ex-error"><span class="label">Error</span>Rushing to a heavier bell — shoulder stability takes longer to build. Stay patient.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">D</span><div><span class="ex-name">KB Two-Hand Press</span><span class="ex-mod">Moderate bell</span></div></div><div class="ex-params"><span class="ex-sets">3 × 8</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Both hands on bell horns, press from chin to full lockout. Earns future single-arm work.</div><div class="ex-error"><span class="label">Error</span>Flaring elbows wide — keep tracking slightly inward, wrists neutral throughout.</div></div>
+    </div>
+    <div class="ex-item finisher">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">E</span><div><span class="ex-name">Finisher</span><span class="ex-mod">Push-Ups + Rows + Towel Hold</span></div></div><div class="ex-params"><span class="ex-sets">3 rounds</span><span class="ex-rest">Rest 30s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue">8 Push-Ups (best variation) + 10 KB Upright Rows + 20s Towel Pinch Hold. No rest within rounds.</div></div>
+    </div>
+  </div></div>
+  <div class="page-footer"><span class="footer-pg">19</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W2 TUESDAY — HYBRID CONDITIONING ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Tuesday · Week 2</span>
+        <div class="day-title">Hybrid<br>Conditioning</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Build · Day 09 / 28</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> Less rest on wall balls trains lactate tolerance. Breathe at the top — recovery window.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">High knees, drive to hip height, arms pumping, controlled pace</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Leg swings in place, front-back 10 each, then lateral 10 each leg</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Hip circles, hands on hips, 8 large circles each direction</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Bodyweight squat pulses, sit in squat, pulse 10 times, stand, 3 rounds</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Butt kicks 20 reps + lateral shuffle in place 10 each direction</span></div>
+    </div>
+  </div>
+  <div class="content-area"><div class="ex-list">
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">A</span><div><span class="ex-name">Run 1km</span><span class="ex-mod">Breathing rhythm: 2 steps in, 2 steps out</span></div></div><div class="ex-params"><span class="ex-sets">RPE 5</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Longer than Week 1. Breathing rhythm: 2 steps in, 2 steps out.</div><div class="ex-error"><span class="label">Error</span>Surging out of the gate — consistency across the km builds engine better.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">B</span><div><span class="ex-name">Wall Balls</span><span class="ex-mod">Light med ball · +1 set, less rest</span></div></div><div class="ex-params"><span class="ex-sets">4 × 10</span><span class="ex-rest">Rest 50s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Exhale forcefully on throw — that is your micro-recovery within the set.</div><div class="ex-error"><span class="label">Error</span>Holding breath — this spikes fatigue rapidly. Breathe on every rep.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">C</span><div><span class="ex-name">Sandbag Lunges</span><span class="ex-mod">Training weight · +2 reps per leg</span></div></div><div class="ex-params"><span class="ex-sets">3 × 10 each</span><span class="ex-rest">Rest 50s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Added 2 reps. Stay tall throughout. Fatigue will try to make you hunch — resist it.</div><div class="ex-error"><span class="label">Error</span>Rushing as fatigue builds — a rushed lunge is a knee-stress lunge. Control every step.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">D</span><div><span class="ex-name">KB Farmers Carry</span><span class="ex-mod">2 bells · longer distance</span></div></div><div class="ex-params"><span class="ex-sets">3 × 40m</span><span class="ex-rest">Rest 50s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Extra 10m this week. Posture to the last step — that's where carries are won or lost.</div><div class="ex-error"><span class="label">Error</span>Losing grip tension near end — grip hard from start to finish, not just at the start.</div></div>
+    </div>
+    <div class="ex-item finisher">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">E</span><div><span class="ex-name">Finisher</span><span class="ex-mod">Wall Balls + Lunges + Run</span></div></div><div class="ex-params"><span class="ex-sets">2 rounds</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue">12 Wall Balls + 10 Lunges each + 200m Run. Time the full finisher. Compare to Week 1.</div></div>
+    </div>
+  </div></div>
+  <div class="page-footer"><span class="footer-pg">20</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W2 WEDNESDAY — LOWER BODY STRENGTH ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Wednesday · Week 2</span>
+        <div class="day-title">Lower Body<br>Strength</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Build · Day 10 / 28</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> Tempo work teaches your nervous system to own the movement. 3-1-1 feels slow — that's the point.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">Bodyweight squats, slow 3s down, normal up, 10–12 reps</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Glute bridges, 15 reps, 2s hold at top</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Leg swings, front-back and lateral, 10 each direction each leg</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Cossack squat holds in place, wide stance, shift side to side, 3s holds</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Ankle circles 10 each foot + deep squat hold 10–15 seconds</span></div>
+    </div>
+  </div>
+  <div class="content-area"><div class="ex-list">
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">A</span><div><span class="ex-name">Goblet Squat Tempo 3-1-1</span><span class="ex-mod">Moderate KB · +1 set</span></div></div><div class="ex-params"><span class="ex-sets">4 × 10</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>3s down, 1s pause at bottom, 1s up. Own the movement, don't fall through it.</div><div class="ex-error"><span class="label">Error</span>Speeding up on the way down — the eccentric phase is where strength is built.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">B</span><div><span class="ex-name">Romanian Deadlift</span><span class="ex-mod">Moderate bar · +1 set</span></div></div><div class="ex-params"><span class="ex-sets">4 × 10</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Same hip hinge. By set 4 hamstrings should be burning — that burn is adaptation.</div><div class="ex-error"><span class="label">Error</span>Lower back rounding on set 4 — rest longer or reduce load before continuing.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">C</span><div><span class="ex-name">Reverse Lunges</span><span class="ex-mod">Light KBs · first loaded week</span></div></div><div class="ex-params"><span class="ex-sets">3 × 10 each</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>First time with load. KBs at sides. Same shin-vertical mechanics as Week 1.</div><div class="ex-error"><span class="label">Error</span>Added weight pulling you forward — core stays tight, chest proud throughout.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">D</span><div><span class="ex-name">Single-Leg Glute Bridge</span><span class="ex-mod">Bodyweight</span></div></div><div class="ex-params"><span class="ex-sets">3 × 10 each</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>One foot flat, one leg extended. Drive through planted heel. Squeeze 2s at top.</div><div class="ex-error"><span class="label">Error</span>Hips rotating away from working side — keep hips level throughout.</div></div>
+    </div>
+    <div class="ex-item finisher">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">E</span><div><span class="ex-name">Finisher</span><span class="ex-mod">Goblet Squats + Lunges + Wall Sit</span></div></div><div class="ex-params"><span class="ex-sets">1 round</span><span class="ex-rest">No rest</span></div></div>
+      <div class="ex-cues"><div class="ex-cue">15 Goblet Squats + 15 Reverse Lunges each + 30s Wall Sit. Time it. Record completion time.</div></div>
+    </div>
+  </div></div>
+  <div class="page-footer"><span class="footer-pg">21</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W2 THURSDAY — ACTIVE RECOVERY ═══ -->
+<div class="page dark-page">
+  <div class="week-opener-accent"></div>
+  <div class="dark-content">
+    <span class="dark-overline">Thursday · Week 2</span>
+    <div class="dark-title">Active Recovery</div>
+    <div class="header-rule"></div>
+    <p class="dark-intro">Today is not rest and not training. It is an adaptation day. Light movement increases blood flow to worked muscles, accelerating repair. Choose one option based on how your body feels.</p>
+    <div class="recovery-option">
+      <span class="recovery-icon">🏃</span>
+      <div><div class="recovery-title">Zone 2 Run or Walk</div><div class="recovery-desc">20–40 min at RPE 3–4. Full conversation throughout. Builds aerobic base without adding fatigue.</div></div>
+    </div>
+    <div class="recovery-option">
+      <span class="recovery-icon">🎾</span>
+      <div><div class="recovery-title">Play a Sport</div><div class="recovery-desc">Tennis, pickleball, basketball. Unstructured athletic movement is excellent recovery. Not a competition day.</div></div>
+    </div>
+    <div class="recovery-option">
+      <span class="recovery-icon">🧘</span>
+      <div><div class="recovery-title">Yoga or Mobility</div><div class="recovery-desc">30–45 min on hip flexors, hamstrings, thoracic spine, shoulders. These are the areas loaded most this week.</div></div>
+    </div>
+    <div class="recovery-option">
+      <span class="recovery-icon">🚶</span>
+      <div><div class="recovery-title">Extended Walk</div><div class="recovery-desc">30–60 min. Simple, effective, underrated. Zero meaningful training stress.</div></div>
+    </div>
+    <p class="dark-note">Body will be more adapted by now — your chosen movement may feel noticeably easier. That is the adaptation working.</p>
+  </div>
+  <div class="page-footer"><span class="footer-pg">22</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W2 FRIDAY — FULL BODY POWER + CORE ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Friday · Week 2</span>
+        <div class="day-title">Full Body<br>Power + Core</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Build · Day 12 / 28</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> Your mid-program push-up count tells you if nervous system adaptation has taken hold.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">March in place building pace, knees to hip height by end of minute</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Inchworms in place, hinge, walk to plank, hold 2s, walk back, stand</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Hip circles 8 each direction + slow hip hinges, feel hamstring each time</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Squat jumps 10 reps (low-impact option: squat and rise to toes)</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Arm crosses + torso rotations, swing arms open, rotate side to side</span></div>
+    </div>
+  </div>
+  <div class="content-area"><div class="ex-list">
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">A</span><div><span class="ex-name">KB Swings</span><span class="ex-mod">Heavy bell · +3 reps</span></div></div><div class="ex-params"><span class="ex-sets">4 × 15</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>More reps means more chances for hip snap to degrade. Maintain explosive power every rep.</div><div class="ex-error"><span class="label">Error</span>Grinding through last 3 reps without power — swings are about force, not just completion.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">B</span><div><span class="ex-name">Push-Ups Max Reps</span><span class="ex-mod">+1 set</span></div></div><div class="ex-params"><span class="ex-sets">4 × max</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Compare totals to Week 1. Most athletes improve on sets 2–4 — nervous system has learned.</div><div class="ex-error"><span class="label">Error</span>Starting too fast — pace first set slightly below max to allow more total volume.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">C</span><div><span class="ex-name">Zercher Squat</span><span class="ex-mod">Moderate bar · +1 set</span></div></div><div class="ex-params"><span class="ex-sets">4 × 8</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>By set 4 upper back and core will be taxed. Brace before every rep without exception.</div><div class="ex-error"><span class="label">Error</span>Elbows dropping on last set — if they do, the set is over. Reset before continuing.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">D</span><div><span class="ex-name">Sandbag Carry — Overhead</span><span class="ex-mod-spacer"></span></div></div><div class="ex-params"><span class="ex-sets">3 × 30m</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Attempt overhead if shoulder stability allows. Bear hug if not — never sacrifice form.</div><div class="ex-error"><span class="label">Error</span>Arching lower back on overhead carry — ribs down, core tight, arms locked overhead.</div></div>
+    </div>
+    <div class="ex-item finisher">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">E</span><div><span class="ex-name">Finisher</span><span class="ex-mod">Max Push-Ups + Core Circuit</span></div></div><div class="ex-params"><span class="ex-sets">2 rounds</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue">1 × max push-ups from toes + Dead Bug 8 each side + Side Plank 20s each side. Record max push-up count.</div></div>
+    </div>
+  </div></div>
+  <div class="page-footer"><span class="footer-pg">23</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W2 SATURDAY — BENCHMARK SESSION ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Saturday · Week 2</span>
+        <div class="day-title">Benchmark<br>Session</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Build · Day 13 / 28</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> Breathing should allow short phrases by Run 3 — if not, you started too fast.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">March in place at easy pace (RPE 3)</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Leg swings 30s + hip circles 30s</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Bodyweight squats, 10 slow reps</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Deep lunge holds, 4 each side, 3s hold</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Build march to light jog in place, RPE 4 by end</span></div>
+    </div>
+  </div>
+  <div class="benchmark-list">
+    <p class="benchmark-note">Start timer at Run 1. Lap every segment.</p>
+    <div class="benchmark-border">
+      <div class="run-row"><span class="run-pill">Run 1</span><span class="run-dist">1km</span><span class="run-note">RPE 5–6 · Faster start. You know what's coming.</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="station-row"><div><span class="station-name">Wall Balls</span><div class="station-rest">Rest 75s · Break 10+10 if needed.</div></div><span class="station-reps">20 reps</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="run-row"><span class="run-pill">Run 2</span><span class="run-dist">1km</span><span class="run-note">RPE 5–6 · Match your splits.</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="station-row"><div><span class="station-name">Sandbag Lunges</span><div class="station-rest">Rest 75s</div></div><span class="station-reps">60m / 38 reps</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="run-row"><span class="run-pill">Run 3</span><span class="run-dist">1km</span><span class="run-note">RPE 5–6 · Third km. Mental toughness territory.</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="station-row"><div><span class="station-name">Farmers Carry</span><div class="station-rest">Rest 75s · Don't put them down.</div></div><span class="station-reps">120m / 2 min</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="run-row"><span class="run-pill">Run 4</span><span class="run-dist">500m</span><span class="run-note">RPE 8 · Sprint the last 100m.</span></div>
+    </div>
+    <p class="benchmark-note">Stop timer. Record total time. Note where you felt strong and where you faded — that is your training signal for Week 3.</p>
+  </div>
+  <div class="page-footer"><span class="footer-pg">24</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ WEEK 3 OPENER ═══ -->
+<div class="page week-opener">
+  <div class="week-opener-accent"></div>
+  <span class="week-opener-numeral">03</span>
+  <div class="week-opener-content">
+    <div class="week-opener-overline">Week 3</div>
+    <div class="week-opener-title">Intensify</div>
+    <div class="week-opener-desc">The heavy barbell is introduced this week. Loads increase. A new station is added to the benchmark session. This is where the program earns its title — but only if you bring the right mindset. No ego loading. Earn every kilogram.</div>
+  </div>
+</div>
+
+<!-- ═══ W3 MONDAY — UPPER BODY STRENGTH ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Monday · Week 3</span>
+        <div class="day-title">Upper Body<br>Strength</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Intensify · Day 15 / 28</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> Heavy rows are a shoulder health investment — stability built here lets you press more.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">Arm circles, large full range, 10 forward + 10 backward each arm</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Scapular wall slides, 10 reps, full wall contact throughout</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Inchworms in place, 4–5 reps, slow and deliberate</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Kneeling push-up holds, lower 2 inches, hold 3s, push up, 6 reps</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Cross-body arm swings + thoracic rotations, reach under body, 5 each</span></div>
+    </div>
+  </div>
+  <div class="note-block">No Ego Loading — Week 3. Heavy barbell starts this week. Only load what allows clean form for the full set.</div>
+  <div class="content-area"><div class="ex-list">
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">A</span><div><span class="ex-name">Push-Ups from Toes</span><span class="ex-mod-spacer"></span></div></div><div class="ex-params"><span class="ex-sets">4 × 8–10</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Target 8 full reps from toes before dropping. All 10 from toes is a milestone.</div><div class="ex-error"><span class="label">Error</span>Compromising depth to stay on toes — chest to floor always. Depth over position.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">B</span><div><span class="ex-name">Barbell Bent-Over Row</span><span class="ex-mod">Heavy bar · first week</span></div></div><div class="ex-params"><span class="ex-sets">4 × 8</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Reduced reps because load is significantly higher. Brace harder. Pull with intent.</div><div class="ex-error"><span class="label">Error</span>Heavy bar as ego marker — if back rounds at all, the bar is too heavy.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">C</span><div><span class="ex-name">KB Push Press</span><span class="ex-mod">Light bell · each arm</span></div></div><div class="ex-params"><span class="ex-sets">4 × 8</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Small knee dip to generate drive, press to lockout. Still the light bell — perfect mechanics.</div><div class="ex-error"><span class="label">Error</span>Forcing a heavy bell with leg drive — light bell only. Drive, don't compensate.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">D</span><div><span class="ex-name">Renegade Row</span><span class="ex-mod">Light KBs</span></div></div><div class="ex-params"><span class="ex-sets">3 × 6 each</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Push-up position on bells. Row one side, other presses into floor. Hips must stay level.</div><div class="ex-error"><span class="label">Error</span>Hips rotating to help the row — if they rotate, weight is too heavy.</div></div>
+    </div>
+    <div class="ex-item finisher">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">E</span><div><span class="ex-name">Finisher</span><span class="ex-mod">AMRAP 4 min · Push-Ups + KB Rows</span></div></div><div class="ex-params"><span class="ex-sets">AMRAP 4 min</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue">5 Push-Ups + 5 KB Rows each arm. Continuous for 4 minutes. Timer on. Record rounds completed.</div></div>
+    </div>
+  </div></div>
+  <div class="page-footer"><span class="footer-pg">25</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W3 TUESDAY — HYBRID CONDITIONING ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Tuesday · Week 3</span>
+        <div class="day-title">Hybrid<br>Conditioning</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Intensify · Day 16 / 28</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> The suitcase carry trains the core stability that running and direction change demand.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">High knees, drive to hip height, arms pumping, controlled pace</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Leg swings in place, front-back 10 each, then lateral 10 each leg</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Hip circles, hands on hips, 8 large circles each direction</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Bodyweight squat pulses, sit in squat, pulse 10 times, stand, 3 rounds</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Butt kicks 20 reps + lateral shuffle in place 10 each direction</span></div>
+    </div>
+  </div>
+  <div class="content-area"><div class="ex-list">
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">A</span><div><span class="ex-name">Run 1.2km</span><span class="ex-mod">Longer opening run</span></div></div><div class="ex-params"><span class="ex-sets">RPE 5–6</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Longer opening run. Your aerobic capacity has grown — trust it.</div><div class="ex-error"><span class="label">Error</span>Treating opening run like a warm-up — RPE 5–6 means you're working, just sustainably.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">B</span><div><span class="ex-name">Wall Balls</span><span class="ex-mod">+2 reps, less rest</span></div></div><div class="ex-params"><span class="ex-sets">4 × 12</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>45s rest is short. Sets of 6+6 with 3s breath reset is a valid strategy.</div><div class="ex-error"><span class="label">Error</span>Taking longer than 45s rest — shorter rest trains faster recovery. Hold the prescription.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">C</span><div><span class="ex-name">Sandbag Lunges</span><span class="ex-mod">+1 set</span></div></div><div class="ex-params"><span class="ex-sets">4 × 10 each</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Smooth transitions between legs. Alternate without pausing at top if possible.</div><div class="ex-error"><span class="label">Error</span>Sandbag shifting — re-wrap arms before each set to maintain control.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">D</span><div><span class="ex-name">KB Suitcase Carry</span><span class="ex-mod">Moderate bell · one hand</span></div></div><div class="ex-params"><span class="ex-sets">4 × 40m each</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Single hand carry. Resist leaning away from bell — core holds you upright.</div><div class="ex-error"><span class="label">Error</span>Leaning sideways — this is a core failure. Reduce load if you can't stay upright.</div></div>
+    </div>
+    <div class="ex-item finisher">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">E</span><div><span class="ex-name">Finisher</span><span class="ex-mod">Wall Balls + Lunges + Run</span></div></div><div class="ex-params"><span class="ex-sets">3 rounds</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue">10 Wall Balls + 8 Lunges each + 200m Run. Time the full finisher. Record total time.</div></div>
+    </div>
+  </div></div>
+  <div class="page-footer"><span class="footer-pg">26</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W3 WEDNESDAY — LOWER BODY STRENGTH ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Wednesday · Week 3</span>
+        <div class="day-title">Lower Body<br>Strength</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Intensify · Day 17 / 28</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> Week 3 loads are heavy because you earned them over two weeks. Form is still the ceiling.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">Slow bodyweight squats, 3s down, pause, stand, 10 reps</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Single-leg balance holds, 10s each side, 3 rounds. Activates stabilisers.</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Hip circles 8 each way + bodyweight RDL movements, feel hamstring 8 times</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Reverse lunge holds, step back, hold 3s, stand, 4 each side</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Glute bridges, 15 reps, 2s hold. Posterior chain activation before heavy squats.</span></div>
+    </div>
+  </div>
+  <div class="note-block">No Ego Loading — Week 3. Heavy barbell begins today. Only load what allows full depth with a proud chest.</div>
+  <div class="content-area"><div class="ex-list">
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">A</span><div><span class="ex-name">Zercher Squat</span><span class="ex-mod">Heavy bar · first week</span></div></div><div class="ex-params"><span class="ex-sets">4 × 6</span><span class="ex-rest">Rest 90s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Bar in elbow crooks. Elbows high, chest proud. Full brace before every descent.</div><div class="ex-error"><span class="label">Error</span>Elbows dropping as fatigue sets in — when elbows drop, back rounds. Reset each rep.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">B</span><div><span class="ex-name">Single-Leg RDL</span><span class="ex-mod">Moderate KB · opposite hand</span></div></div><div class="ex-params"><span class="ex-sets">3 × 8 each</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Hinge on one leg, KB opposite hand, reach to floor. Free leg extends behind.</div><div class="ex-error"><span class="label">Error</span>Rushing — slow down significantly. Speed is the enemy of this movement.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">C</span><div><span class="ex-name">Walking Lunges</span><span class="ex-mod">Light KBs · first forward lunge</span></div></div><div class="ex-params"><span class="ex-sets">3 × 10 each</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Forward lunges now that joints have adapted. Front knee tracks over pinky toe.</div><div class="ex-error"><span class="label">Error</span>Front knee diving inward — drive knee outward actively on every step.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">D</span><div><span class="ex-name">Hip Thrust</span><span class="ex-mod">Moderate bar · shoulders on bench</span></div></div><div class="ex-params"><span class="ex-sets">4 × 12</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Bar across hips with pad. Drive through heels, squeeze glutes 2s at peak.</div><div class="ex-error"><span class="label">Error</span>Hyperextending lower back at top — glutes stop the movement, not lower back.</div></div>
+    </div>
+    <div class="ex-item finisher">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">E</span><div><span class="ex-name">Finisher</span><span class="ex-mod">Zercher Squats + Walking Lunges</span></div></div><div class="ex-params"><span class="ex-sets">2 rounds</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue">8 Zercher Squats (moderate) + 12 Walking Lunges each. A preview of what Week 4 will demand.</div></div>
+    </div>
+  </div></div>
+  <div class="page-footer"><span class="footer-pg">27</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W3 THURSDAY — ACTIVE RECOVERY ═══ -->
+<div class="page dark-page">
+  <div class="week-opener-accent"></div>
+  <div class="dark-content">
+    <span class="dark-overline">Thursday · Week 3</span>
+    <div class="dark-title">Active Recovery</div>
+    <div class="header-rule"></div>
+    <p class="dark-intro">Today is not rest and not training. It is an adaptation day. Light movement increases blood flow to worked muscles, accelerating repair. Choose one option based on how your body feels.</p>
+    <div class="recovery-option">
+      <span class="recovery-icon">🏃</span>
+      <div><div class="recovery-title">Zone 2 Run or Walk</div><div class="recovery-desc">20–40 min at RPE 3–4. Full conversation throughout. Builds aerobic base without adding fatigue.</div></div>
+    </div>
+    <div class="recovery-option">
+      <span class="recovery-icon">🎾</span>
+      <div><div class="recovery-title">Play a Sport</div><div class="recovery-desc">Tennis, pickleball, basketball. Unstructured athletic movement is excellent recovery. Not a competition day.</div></div>
+    </div>
+    <div class="recovery-option">
+      <span class="recovery-icon">🧘</span>
+      <div><div class="recovery-title">Yoga or Mobility</div><div class="recovery-desc">30–45 min on hip flexors, hamstrings, thoracic spine, shoulders. These are the areas loaded most this week.</div></div>
+    </div>
+    <div class="recovery-option">
+      <span class="recovery-icon">🚶</span>
+      <div><div class="recovery-title">Extended Walk</div><div class="recovery-desc">30–60 min. Simple, effective, underrated. Zero meaningful training stress.</div></div>
+    </div>
+    <p class="dark-note">By now your Z2 run or walk will feel noticeably more comfortable than Week 1. That is your engine growing.</p>
+  </div>
+  <div class="page-footer"><span class="footer-pg">28</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W3 FRIDAY — FULL BODY POWER + CORE ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Friday · Week 3</span>
+        <div class="day-title">Full Body<br>Power + Core</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Intensify · Day 19 / 28</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> 5 sets of swings builds power endurance. Powerful reps are deposits. Sloppy ones withdrawals.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">March in place building pace, knees to hip height by end of minute</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Inchworms in place, hinge, walk to plank, hold 2s, walk back, stand</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Hip circles 8 each direction + slow hip hinges, feel hamstring each time</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Squat jumps 10 reps (low-impact option: squat and rise to toes)</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Arm crosses + torso rotations, swing arms open, rotate side to side</span></div>
+    </div>
+  </div>
+  <div class="content-area"><div class="ex-list">
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">A</span><div><span class="ex-name">KB Swings</span><span class="ex-mod">Heavy bell · 5 sets, power endurance</span></div></div><div class="ex-params"><span class="ex-sets">5 × 15</span><span class="ex-rest">Rest 40s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Maintain same hip snap on rep 1 as rep 15 of set 5. That is the entire goal.</div><div class="ex-error"><span class="label">Error</span>Degraded form in late sets — rest longer if needed. Sloppy swings build sloppy patterns.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">B</span><div><span class="ex-name">Push-Ups Max from Toes</span><span class="ex-mod-spacer"></span></div></div><div class="ex-params"><span class="ex-sets">4 × max</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Progress should be visible vs Week 1. If not, sleep or nutrition is the limiter.</div><div class="ex-error"><span class="label">Error</span>Stopping early from discomfort vs failure — push to real failure, then drop to knees.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">C</span><div><span class="ex-name">Zercher Squat</span><span class="ex-mod">Heavy bar</span></div></div><div class="ex-params"><span class="ex-sets">3 × 6</span><span class="ex-rest">Rest 75s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Heavy squats on a fatigued body — specific to hybrid training. Brace twice as hard.</div><div class="ex-error"><span class="label">Error</span>Reducing brace when tired — fatigue is exactly when it matters most.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">D</span><div><span class="ex-name">Sandbag Carry — Alt. Grips</span><span class="ex-mod-spacer"></span></div></div><div class="ex-params"><span class="ex-sets">4 × 40m</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Rd 1 bear hug · Rd 2 right shoulder · Rd 3 bear hug · Rd 4 left shoulder.</div><div class="ex-error"><span class="label">Error</span>Favouring one side — both shoulder carries must be performed. Imbalance costs time.</div></div>
+    </div>
+    <div class="ex-item finisher">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">E</span><div><span class="ex-name">Finisher</span><span class="ex-mod">Max Push-Ups 2 min + Core</span></div></div><div class="ex-params"><span class="ex-sets">2 min + core</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue">Max push-ups in 2 minutes (timer on). Record variation. Follow with Dead Bug 8 each + Hollow Body 20s. Record count.</div></div>
+    </div>
+  </div></div>
+  <div class="page-footer"><span class="footer-pg">29</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W3 SATURDAY — BENCHMARK SESSION ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Saturday · Week 3</span>
+        <div class="day-title">Benchmark<br>Session</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Intensify · Day 20 / 28</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> Station 4 push-ups reward every Monday you showed up. Steady sets of 5 beat a fast collapse.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">March in place at easy pace (RPE 3)</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Leg swings 30s + hip circles 30s</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Bodyweight squats, 10 slow reps</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Deep lunge holds, 4 each side, 3s hold</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Build march to light jog in place, RPE 4 by end</span></div>
+    </div>
+  </div>
+  <div class="benchmark-list">
+    <p class="benchmark-note">Start timer at Run 1. Lap every segment.</p>
+    <div class="benchmark-border">
+      <div class="run-row"><span class="run-pill">Run 1</span><span class="run-dist">1km</span><span class="run-note">RPE 5–6 · Controlled start. Save energy for the middle.</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="station-row"><div><span class="station-name">Wall Balls</span><div class="station-rest">Rest 60s · Break 12-8-5. Less rest than Week 2.</div></div><span class="station-reps">25 reps</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="run-row"><span class="run-pill">Run 2</span><span class="run-dist">1km</span><span class="run-note">RPE 5–6 · Consistent pace. You have done this.</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="station-row"><div><span class="station-name">Sandbag Lunges</span><div class="station-rest">Rest 60s · Longest yet.</div></div><span class="station-reps">80m / 50 reps</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="run-row"><span class="run-pill">Run 3</span><span class="run-dist">1km</span><span class="run-note">RPE 5–6 · Hold the pace. Don't slow down.</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="station-row"><div><span class="station-name">Farmers Carry</span><div class="station-rest">Rest 60s · One shot. Don't put them down.</div></div><span class="station-reps">150m / 2:30</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="station-row"><div><span class="station-name">Push-Ups Max 2 min</span><div class="station-rest">Rest 60s · NEW this week. Sets of 5. Record total.</div></div><span class="station-reps">Max reps</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="run-row"><span class="run-pill">Run 4</span><span class="run-dist">1km</span><span class="run-note">RPE 7–8 · Finish hard. You are fitter now.</span></div>
+    </div>
+    <p class="benchmark-note">Stop timer. Record everything. This is its own standalone benchmark.</p>
+  </div>
+  <div class="page-footer"><span class="footer-pg">30</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ WEEK 4 OPENER ═══ -->
+<div class="page week-opener">
+  <div class="week-opener-accent"></div>
+  <span class="week-opener-numeral">04</span>
+  <div class="week-opener-content">
+    <div class="week-opener-overline">Week 4</div>
+    <div class="week-opener-title">Test Week</div>
+    <div class="week-opener-desc">Everything you have built — every set, every carry, every run — gets measured this week. Benchmark every session. Compare every number within this week. You are not the same athlete who started Week 1. Prove it.</div>
+  </div>
+</div>
+
+<!-- ═══ W4 MONDAY — UPPER BODY BENCHMARK ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Monday · Week 4</span>
+        <div class="day-title">Upper Body<br>Benchmark</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Test Week · Day 22 / 28</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> Five max sets with full rest teaches your nervous system to deliver max output on demand.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">Arm circles, large full range, 10 forward + 10 backward each arm</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Scapular wall slides, 10 reps, full wall contact throughout</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Inchworms in place, 4–5 reps, slow and deliberate</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Kneeling push-up holds, lower 2 inches, hold 3s, push up, 6 reps</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Slow deliberate push-ups, 5 reps, full range, groove the pattern</span></div>
+    </div>
+  </div>
+  <div class="content-area"><div class="ex-list">
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">A</span><div><span class="ex-name">Push-Ups — 5 Max Sets</span><span class="ex-mod-spacer"></span></div></div><div class="ex-params"><span class="ex-sets">5 × max</span><span class="ex-rest">Rest 75s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Five sets of max reps, 75s full rest each. Give everything every time. Final strength numbers.</div><div class="ex-error"><span class="label">Error</span>Sandbagging early sets — each set is its own benchmark. All-out every time.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">B</span><div><span class="ex-name">Barbell Bent-Over Row</span><span class="ex-mod">Heavy bar</span></div></div><div class="ex-params"><span class="ex-sets">5 × 6</span><span class="ex-rest">Rest 75s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Heaviest rowing of the program. Should feel more manageable than Week 3 — neural adaptation.</div><div class="ex-error"><span class="label">Error</span>Familiarity breeding sloppiness — Week 4 is not the time to get casual with form.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">C</span><div><span class="ex-name">KB Push Press</span><span class="ex-mod">Light bell · each arm</span></div></div><div class="ex-params"><span class="ex-sets">4 × 8</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Solidify the pattern. These should feel crisp and fast on a trained shoulder.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">D</span><div><span class="ex-name">Renegade Row</span><span class="ex-mod">Light KBs · +2 reps</span></div></div><div class="ex-params"><span class="ex-sets">4 × 8 each</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>More reps means higher anti-rotation demand. Core is strong now. Demonstrate it.</div><div class="ex-error"><span class="label">Error</span>Hip rotation increasing as reps increase — note as Week 4 growth edge.</div></div>
+    </div>
+    <div class="ex-item finisher">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">E</span><div><span class="ex-name">Benchmark: Max Push-Up Test</span><span class="ex-mod-spacer"></span></div></div><div class="ex-params"><span class="ex-sets">1 × max</span><span class="ex-rest">Full rest</span></div></div>
+      <div class="ex-cues"><div class="ex-cue">One all-out set from toes. Full rest before starting. Drop to knees only when toes are done. Record the number. This is your 4-week push-up result.</div></div>
+    </div>
+  </div></div>
+  <div class="page-footer"><span class="footer-pg">31</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W4 TUESDAY — CONDITIONING BENCHMARK ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Tuesday · Week 4</span>
+        <div class="day-title">Conditioning<br>Benchmark</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Test Week · Day 23 / 28</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> Every number recorded today is a before-and-after story. Lunge time and wall ball count don't lie.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">High knees, drive to hip height, arms pumping, controlled pace</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Leg swings in place, front-back 10 each, then lateral 10 each leg</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Hip circles, hands on hips, 8 large circles each direction</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Bodyweight squat pulses, sit in squat, pulse 10 times, stand, 3 rounds</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Butt kicks 20 reps + lateral shuffle in place 10 each direction</span></div>
+    </div>
+  </div>
+  <div class="content-area"><div class="ex-list">
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">A</span><div><span class="ex-name">Run 1.5km</span><span class="ex-mod">Longest opening run of the program</span></div></div><div class="ex-params"><span class="ex-sets">RPE 5</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Longest opening run of the program. Arrive at stations with fuel left.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">B</span><div><span class="ex-name">Wall Ball Test</span><span class="ex-mod">Max reps in 3 min</span></div></div><div class="ex-params"><span class="ex-sets">Max / 3 min</span><span class="ex-rest">Rest 2 min</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Sets of 10, 3–5s standing breaks. Even pace beats fast start and long recovery.</div><div class="ex-error"><span class="label">Error</span>All-out on minute 1 and dying in minute 3 — pacing is a skill. Practice it here.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">C</span><div><span class="ex-name">Sandbag Lunges 100m</span><span class="ex-mod">60 reps per leg · for time</span></div></div><div class="ex-params"><span class="ex-sets">For time</span><span class="ex-rest">Rest 2 min</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Race yourself. Consistent pace, controlled form throughout. Record the time.</div><div class="ex-error"><span class="label">Error</span>Sprinting first 50m and grinding last 50m — even pace produces faster times.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">D</span><div><span class="ex-name">Farmers Carry 200m</span><span class="ex-mod">Heavy bells · for time</span></div></div><div class="ex-params"><span class="ex-sets">For time</span><span class="ex-rest">Rest 2 min</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Heaviest carry in the program. No drops. Grip, posture, pace. Record the time.</div><div class="ex-error"><span class="label">Error</span>Putting bells down — if needed, rest 5s max and continue. No drops is the goal.</div></div>
+    </div>
+    <div class="ex-item finisher">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">E</span><div><span class="ex-name">Finisher: Run 1.5km</span><span class="ex-mod-spacer"></span></div></div><div class="ex-params"><span class="ex-sets">RPE 7–8</span><span class="ex-rest">For time</span></div></div>
+      <div class="ex-cues"><div class="ex-cue">Your hardest finishing run of the program. Record the time. The opening vs closing run gap shows your engine growth.</div></div>
+    </div>
+  </div></div>
+  <div class="page-footer"><span class="footer-pg">32</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W4 WEDNESDAY — LOWER BODY BENCHMARK ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Wednesday · Week 4</span>
+        <div class="day-title">Lower Body<br>Benchmark</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Test Week · Day 24 / 28</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> Your Week 4 squat is unrecognisable from Week 1. The 5×5 is a measurement of 4 weeks built.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">Slow bodyweight squats, 3s down, pause, stand, 10 reps</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Single-leg balance holds, 10s each side, 3 rounds. Activates stabilisers.</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Hip circles 8 each way + bodyweight RDL movements, feel hamstring 8 times</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Reverse lunge holds, step back, hold 3s, stand, 4 each side</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Glute bridges, 15 reps, 2s hold. Full glute activation before heavy squats.</span></div>
+    </div>
+  </div>
+  <div class="content-area"><div class="ex-list">
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">A</span><div><span class="ex-name">Zercher Squat 5×5</span><span class="ex-mod">Heavy bar</span></div></div><div class="ex-params"><span class="ex-sets">5 × 5</span><span class="ex-rest">Rest 90s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Full depth, elbows high, chest proud on every rep of every set. Week 4 strength benchmark.</div><div class="ex-error"><span class="label">Error</span>Grinding through bad reps to hit the number — quality 5×5 always beats sloppy 5×5.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">B</span><div><span class="ex-name">Single-Leg RDL</span><span class="ex-mod">Moderate-heavy KB</span></div></div><div class="ex-params"><span class="ex-sets">4 × 8 each</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Four weeks of balance work shows here. Own it. Smooth, controlled, confident.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">C</span><div><span class="ex-name">Walking Lunges</span><span class="ex-mod">Heavy KBs · heaviest lunge load</span></div></div><div class="ex-params"><span class="ex-sets">3 × 12 each</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Heaviest lunges of the program. Control every step. Trust the adaptation.</div><div class="ex-error"><span class="label">Error</span>Rushing to finish — slow and strong every rep. Speed comes later.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">D</span><div><span class="ex-name">Hip Thrust</span><span class="ex-mod">Heavy barbell</span></div></div><div class="ex-params"><span class="ex-sets">4 × 10</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Heavier than Week 3. 2s squeeze every rep. These glutes protect everything.</div></div>
+    </div>
+    <div class="ex-item finisher">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">E</span><div><span class="ex-name">Benchmark: Max Wall Sit</span><span class="ex-mod-spacer"></span></div></div><div class="ex-params"><span class="ex-sets">1 × max time</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue">Back flat to wall, thighs parallel. When shaking starts, hold 10 more seconds. Record your time.</div></div>
+    </div>
+  </div></div>
+  <div class="page-footer"><span class="footer-pg">33</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W4 FRIDAY — FULL BODY PEAK ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Friday · Week 4</span>
+        <div class="day-title">Full Body<br>Peak</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Test Week · Day 26 / 28</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> 100 powerful controlled swings — not just 100 swings. Leave nothing in the tank today.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">March in place building pace, knees to hip height by end of minute</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Inchworms in place, hinge, walk to plank, hold 2s, walk back, stand</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Hip circles 8 each direction + slow hip hinges, feel hamstring each time</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Squat jumps 10 reps (low-impact option: squat and rise to toes)</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Arm crosses + torso rotations, swing arms open, rotate side to side</span></div>
+    </div>
+  </div>
+  <div class="content-area"><div class="ex-list">
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">A</span><div><span class="ex-name">KB Swings</span><span class="ex-mod">Heavy bell · 100 total</span></div></div><div class="ex-params"><span class="ex-sets">5 × 20</span><span class="ex-rest">Rest 45s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Same hip snap on rep 1 and rep 100 — that is what four weeks has built.</div><div class="ex-error"><span class="label">Error</span>Volume justifying sloppy form — 100 powerful swings is the goal. Not just 100.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">B</span><div><span class="ex-name">Push-Up + Renegade Row</span><span class="ex-mod">Light KBs</span></div></div><div class="ex-params"><span class="ex-sets">4 × 6</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>1 rep = Push-Up + Row Left + Push-Up + Row Right. Four movements. Go slow.</div><div class="ex-error"><span class="label">Error</span>Hip rotation on the rows — hardest anti-rotation challenge in the program.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">C</span><div><span class="ex-name">Zercher Squat</span><span class="ex-mod">Heavy bar · final strength block</span></div></div><div class="ex-params"><span class="ex-sets">4 × 5</span><span class="ex-rest">Rest 75s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Last heavy squat of the program. Leave nothing behind.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">D</span><div><span class="ex-name">Sandbag Complex</span><span class="ex-mod">Clean + Squat + Carry 20m</span></div></div><div class="ex-params"><span class="ex-sets">3 rounds</span><span class="ex-rest">Rest 60s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Sandbag Clean + Sandbag Squat + Carry 20m. No rest within a round.</div><div class="ex-error"><span class="label">Error</span>Pausing between movements — continuous output under load is the point.</div></div>
+    </div>
+    <div class="ex-item finisher">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">E</span><div><span class="ex-name">Finisher: Max Push-Ups 3 Sets</span><span class="ex-mod-spacer"></span></div></div><div class="ex-params"><span class="ex-sets">3 × max</span><span class="ex-rest">Rest 90s</span></div></div>
+      <div class="ex-cues"><div class="ex-cue">3 × max push-ups from toes, 90s rest between sets. Record each set. Total in benchmark tracker.</div></div>
+    </div>
+  </div></div>
+  <div class="page-footer"><span class="footer-pg">34</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W4 SATURDAY — FINAL BENCHMARK SESSION ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Saturday · Week 4</span>
+        <div class="day-title">Final Benchmark<br>Session</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Test Week · Day 27 / 28</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> Finish strong with form intact on Station 4 — that is the mark of a trained hybrid athlete.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">10-Min Extended Warmup</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1–3:00</span><span class="warmup-text">March in place building to easy jog (RPE 3–4)</span></div>
+      <div class="warmup-item"><span class="warmup-min">3–5:00</span><span class="warmup-text">Full leg swing sequence, front-back + lateral, 10 each leg + hip circles</span></div>
+      <div class="warmup-item"><span class="warmup-min">5–6:30</span><span class="warmup-text">10 BW squats + 4 lunge holds each side</span></div>
+      <div class="warmup-item"><span class="warmup-min">6:30–8</span><span class="warmup-text">3 × 10s deep squat hold + hip circles 8 each way</span></div>
+      <div class="warmup-item"><span class="warmup-min">8–10:00</span><span class="warmup-text">Build jog to RPE 5–6 with 5 × 10s effort bursts at RPE 7, 15s recovery</span></div>
+    </div>
+  </div>
+  <div class="benchmark-list">
+    <p class="benchmark-note">Start timer at Run 1. This is the session. Record everything.</p>
+    <div class="benchmark-border">
+      <div class="run-row"><span class="run-pill">Run 1</span><span class="run-dist">1km</span><span class="run-note">RPE 6–7 · Race pace. Go out with intent.</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="station-row"><div><span class="station-name">Wall Balls</span><div class="station-rest">Rest 45s · Break 15-10-5 or 10-10-10.</div></div><span class="station-reps">30 reps</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="run-row"><span class="run-pill">Run 2</span><span class="run-dist">1km</span><span class="run-note">RPE 6–7 · Hold pace. You've done this before.</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="station-row"><div><span class="station-name">Sandbag Lunges</span><div class="station-rest">Rest 45s · You trained for this.</div></div><span class="station-reps">100m / 60 reps</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="run-row"><span class="run-pill">Run 3</span><span class="run-dist">1km</span><span class="run-note">RPE 6–7 · Third km. Dig deep. Legs know the way.</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="station-row"><div><span class="station-name">Farmers Carry</span><div class="station-rest">Rest 45s · Longest carry. Do not drop.</div></div><span class="station-reps">200m / 3 min</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="station-row"><div><span class="station-name">Push-Ups Max 3 min</span><div class="station-rest">Rest 45s · Everything you built comes out here.</div></div><span class="station-reps">Max reps</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="run-row"><span class="run-pill">Run 4</span><span class="run-dist">1km</span><span class="run-note">RPE 9–10 · ALL OUT. Sprint the final 200m.</span></div>
+    </div>
+    <p class="benchmark-note">Record everything. Save it — Week 5 uses the exact same format for true comparison.</p>
+  </div>
+  <div class="page-footer"><span class="footer-pg">35</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ WEEK 5 OPENER ═══ -->
+<div class="page week-opener">
+  <div class="week-opener-accent"></div>
+  <span class="week-opener-numeral">05</span>
+  <div class="week-opener-content">
+    <div class="week-opener-overline">Week 5</div>
+    <div class="week-opener-title">Deload +<br>Re-Test</div>
+    <div class="week-opener-desc">The body does not get stronger during hard training — it gets stronger during recovery. This week gives your body the conditions to express the full adaptation that 4 weeks built. Then you test again on the exact same benchmark. The result will surprise you.</div>
+  </div>
+</div>
+
+<!-- ═══ W5 MONDAY — UPPER BODY MAINTENANCE ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Monday · Week 5</span>
+        <div class="day-title">Upper Body<br>Maintenance</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Deload · Day 29 / 35</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> Deload sessions should feel almost too easy. That feeling is the entire point.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">Arm circles, 10 fwd + 10 back each arm, big range</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Cross-body arm swings, open wide, thoracic spine rotates</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Inchworms in place, walk to plank, hold 2s, walk back, 4–5 reps</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Kneeling push-up holds, lower to 2 inches, hold 3s, push up, 5 reps</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Scapular wall slides, goalpost arms, slide overhead keeping wall contact</span></div>
+    </div>
+  </div>
+  <div class="content-area"><div class="ex-list">
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">A</span><div><span class="ex-name">Push-Ups</span><span class="ex-mod">Toes or kneeling — crisp and controlled</span></div></div><div class="ex-params"><span class="ex-sets">2 × 8</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Two sets only. Same movements. Half the stress. Your body is absorbing 4 weeks of work.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">B</span><div><span class="ex-name">Barbell Row</span><span class="ex-mod">Moderate bar only</span></div></div><div class="ex-params"><span class="ex-sets">2 × 8</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Drop heavy bar this week. Moderate only. Let the body recover.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">C</span><div><span class="ex-name">KB Overhead Press</span><span class="ex-mod">Light bell · each arm</span></div></div><div class="ex-params"><span class="ex-sets">2 × 8</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Same light bell. Pattern maintenance, not adaptation demand.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">D</span><div><span class="ex-name">KB Two-Hand Press</span><span class="ex-mod">Moderate bell</span></div></div><div class="ex-params"><span class="ex-sets">2 × 8</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>No finisher. End clean. Let your body absorb the work.</div></div>
+    </div>
+    <div class="ex-item finisher" style="border-top:none">
+      <div class="ex-cues"><div class="ex-cue" style="color:var(--text-tertiary);font-style:italic;padding-top:4px">No finisher this week. Two sets only. Same movements. Half the stress. Your body is absorbing 4 weeks of work — let it.</div></div>
+    </div>
+  </div></div>
+  <div class="page-footer"><span class="footer-pg">36</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W5 TUESDAY — LIGHT CONDITIONING ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Tuesday · Week 5</span>
+        <div class="day-title">Light<br>Conditioning</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Deload · Day 30 / 35</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> This session reminds your body what hybrid conditioning feels like without demanding anything.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">High knees, drive to hip height, arms pumping, controlled pace</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Leg swings in place, front-back 10 each, then lateral 10 each leg</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Hip circles, hands on hips, 8 large circles each direction</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Bodyweight squat pulses, sit in squat, pulse 10 times, stand, 3 rounds</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Butt kicks 20 reps + lateral shuffle in place 10 each direction</span></div>
+    </div>
+  </div>
+  <div class="content-area"><div class="ex-list">
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">A</span><div><span class="ex-name">Easy Run 1km</span><span class="ex-mod">RPE 4–5 only. No timer pressure.</span></div></div><div class="ex-params"><span class="ex-sets">RPE 4–5</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Easy effort. No stations. No timer pressure. Just movement.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">B</span><div><span class="ex-name">Wall Balls</span><span class="ex-mod">Quality of movement, not speed</span></div></div><div class="ex-params"><span class="ex-sets">2 × 8</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Quality of movement, not speed. Smooth reps only.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">C</span><div><span class="ex-name">Sandbag Lunges</span><span class="ex-mod">Light load if possible</span></div></div><div class="ex-params"><span class="ex-sets">2 × 8 each</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Light load if possible. Smooth, controlled reps.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">D</span><div><span class="ex-name">Easy Run 800m</span><span class="ex-mod">RPE 4–5 to finish</span></div></div><div class="ex-params"><span class="ex-sets">RPE 4–5</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Easy effort to finish. No finisher. No benchmark. Just movement.</div></div>
+    </div>
+    <div class="ex-item finisher" style="border-top:none">
+      <div class="ex-cues"><div class="ex-cue" style="color:var(--text-tertiary);font-style:italic;padding-top:4px">No finisher. No benchmark. Just movement.</div></div>
+    </div>
+  </div></div>
+  <div class="page-footer"><span class="footer-pg">37</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W5 WEDNESDAY — LOWER BODY MAINTENANCE ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Wednesday · Week 5</span>
+        <div class="day-title">Lower Body<br>Maintenance</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Deload · Day 31 / 35</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> Four weeks of loaded squats and carries accumulate stress. This week it absorbs.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">Bodyweight squats, 3s down, chest up, heels grounded, 10–12 reps</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Glute bridges, drive through heels, hold 2s at top, 12–15 reps</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Leg swings, front-back 10 each, then lateral 10 each leg</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Ankle circles 10 each direction each foot + 15 slow calf raises</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Deep lunge holds, step forward, hold 5s hip flexor stretch, 4 each side</span></div>
+    </div>
+  </div>
+  <div class="content-area"><div class="ex-list">
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">A</span><div><span class="ex-name">Goblet Squat</span><span class="ex-mod">Moderate KB</span></div></div><div class="ex-params"><span class="ex-sets">2 × 10</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Smooth, controlled reps. Pattern maintenance only.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">B</span><div><span class="ex-name">Romanian Deadlift</span><span class="ex-mod">Moderate bar</span></div></div><div class="ex-params"><span class="ex-sets">2 × 10</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Same hip hinge. Light effort. Feel the hamstrings without taxing them.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">C</span><div><span class="ex-name">Reverse Lunges</span><span class="ex-mod">Bodyweight or very light</span></div></div><div class="ex-params"><span class="ex-sets">2 × 10 each</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Bodyweight or very light. Movement quality only.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">D</span><div><span class="ex-name">Glute Bridge</span><span class="ex-mod">Bodyweight</span></div></div><div class="ex-params"><span class="ex-sets">2 × 12</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Drive through heels. Squeeze 2s at top. Easy effort.</div></div>
+    </div>
+    <div class="ex-item finisher" style="border-top:none">
+      <div class="ex-cues"><div class="ex-cue" style="color:var(--text-tertiary);font-style:italic;padding-top:4px">No finisher.</div></div>
+    </div>
+  </div></div>
+  <div class="page-footer"><span class="footer-pg">38</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W5 THURSDAY — ACTIVE RECOVERY ═══ -->
+<div class="page dark-page">
+  <div class="week-opener-accent"></div>
+  <div class="dark-content">
+    <span class="dark-overline">Thursday · Week 5</span>
+    <div class="dark-title">Active Recovery</div>
+    <div class="header-rule"></div>
+    <p class="dark-intro">Today is not rest and not training. It is an adaptation day. Light movement increases blood flow to worked muscles, accelerating repair. Choose one option based on how your body feels.</p>
+    <div class="recovery-option">
+      <span class="recovery-icon">🏃</span>
+      <div><div class="recovery-title">Zone 2 Run or Walk</div><div class="recovery-desc">20–40 min at RPE 3–4. Full conversation throughout. Builds aerobic base without adding fatigue.</div></div>
+    </div>
+    <div class="recovery-option">
+      <span class="recovery-icon">🎾</span>
+      <div><div class="recovery-title">Play a Sport</div><div class="recovery-desc">Tennis, pickleball, basketball. Unstructured athletic movement is excellent recovery. Not a competition day.</div></div>
+    </div>
+    <div class="recovery-option">
+      <span class="recovery-icon">🧘</span>
+      <div><div class="recovery-title">Yoga or Mobility</div><div class="recovery-desc">30–45 min on hip flexors, hamstrings, thoracic spine, shoulders. These are the areas loaded most this week.</div></div>
+    </div>
+    <div class="recovery-option">
+      <span class="recovery-icon">🚶</span>
+      <div><div class="recovery-title">Extended Walk</div><div class="recovery-desc">30–60 min. Simple, effective, underrated. Zero meaningful training stress.</div></div>
+    </div>
+    <p class="dark-note">Perhaps your favourite active recovery from the past 4 weeks.</p>
+  </div>
+  <div class="page-footer"><span class="footer-pg">39</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W5 FRIDAY — FULL BODY MAINTENANCE ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Friday · Week 5</span>
+        <div class="day-title">Full Body<br>Maintenance</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Deload · Day 33 / 35</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> Friday deload is pattern maintenance — reminding your body, not demanding adaptation.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">5-Min Warmup · No Equipment · In Place</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1:00</span><span class="warmup-text">March in place building pace, knees to hip height by end of minute</span></div>
+      <div class="warmup-item"><span class="warmup-min">2:00</span><span class="warmup-text">Inchworms in place, hinge, walk to plank, hold 2s, walk back, stand</span></div>
+      <div class="warmup-item"><span class="warmup-min">3:00</span><span class="warmup-text">Hip circles 8 each direction + slow hip hinges, feel hamstring each time</span></div>
+      <div class="warmup-item"><span class="warmup-min">4:00</span><span class="warmup-text">Squat jumps 10 reps (low-impact option: squat and rise to toes)</span></div>
+      <div class="warmup-item"><span class="warmup-min">5:00</span><span class="warmup-text">Arm crosses + torso rotations, swing arms open, rotate side to side</span></div>
+    </div>
+  </div>
+  <div class="content-area"><div class="ex-list">
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">A</span><div><span class="ex-name">KB Swings</span><span class="ex-mod">Moderate bell · lighter than heavy</span></div></div><div class="ex-params"><span class="ex-sets">3 × 10</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Moderate bell. Smooth, powerful reps. Pattern maintenance.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">B</span><div><span class="ex-name">Push-Ups from Toes</span><span class="ex-mod">Stop 2 reps before failure</span></div></div><div class="ex-params"><span class="ex-sets">2 × max</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Stop 2 reps before true failure. Not a test. Just reminding the pattern.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">C</span><div><span class="ex-name">Zercher Squat</span><span class="ex-mod">Moderate bar</span></div></div><div class="ex-params"><span class="ex-sets">2 × 6</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Moderate bar. Smooth reps. Save the heavy work for tomorrow's benchmark.</div></div>
+    </div>
+    <div class="ex-item">
+      <div class="ex-top"><div class="ex-left"><span class="ex-idx">D</span><div><span class="ex-name">Sandbag Bear Hug Carry</span><span class="ex-mod-spacer"></span></div></div><div class="ex-params"><span class="ex-sets">2 × 20m</span><span class="ex-rest"></span></div></div>
+      <div class="ex-cues"><div class="ex-cue"><span class="label">Cue</span>Short carries. Movement quality only. No finisher.</div></div>
+    </div>
+    <div class="ex-item finisher" style="border-top:none">
+      <div class="ex-cues"><div class="ex-cue" style="color:var(--text-tertiary);font-style:italic;padding-top:4px">No finisher.</div></div>
+    </div>
+  </div></div>
+  <div class="page-footer"><span class="footer-pg">40</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ W5 SATURDAY — FINAL RE-TEST BENCHMARK ═══ -->
+<div class="page">
+  <div class="page-header">
+    <div class="header-top">
+      <div class="day-block">
+        <span class="day-overline">Saturday · Week 5</span>
+        <div class="day-title">Final Re-Test<br>Benchmark</div>
+      </div>
+      <div class="header-right">
+        <div class="week-badge">Deload · Day 34 / 35</div>
+        <div class="tip-card">
+          <span class="tip-card-text"><strong>Tip</strong> Your 4-week transformation fully expressed — fresher body, same test. Compare to Week 4.</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="warmup-block">
+    <div class="warmup-label">10-Min Extended Warmup</div>
+    <div class="warmup-items">
+      <div class="warmup-item"><span class="warmup-min">1–3:00</span><span class="warmup-text">March in place building to easy jog (RPE 3–4)</span></div>
+      <div class="warmup-item"><span class="warmup-min">3–5:00</span><span class="warmup-text">Full leg swing sequence, front-back + lateral, 10 each leg + hip circles</span></div>
+      <div class="warmup-item"><span class="warmup-min">5–6:30</span><span class="warmup-text">10 BW squats + 4 lunge holds each side</span></div>
+      <div class="warmup-item"><span class="warmup-min">6:30–8</span><span class="warmup-text">3 × 10s deep squat hold + hip circles 8 each way</span></div>
+      <div class="warmup-item"><span class="warmup-min">8–10:00</span><span class="warmup-text">Build jog to RPE 5–6 with 5 × 10s effort bursts at RPE 7, 15s recovery</span></div>
+    </div>
+  </div>
+  <div class="benchmark-list">
+    <p class="benchmark-note">Same session as Week 4 Saturday. Record everything. Compare directly.</p>
+    <div class="benchmark-border">
+      <div class="run-row"><span class="run-pill">Run 1</span><span class="run-dist">1km</span><span class="run-note">RPE 6–7</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="station-row"><div><span class="station-name">Wall Balls</span><div class="station-rest">Rest 45s</div></div><span class="station-reps">30 reps</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="run-row"><span class="run-pill">Run 2</span><span class="run-dist">1km</span><span class="run-note">RPE 6–7</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="station-row"><div><span class="station-name">Sandbag Lunges</span><div class="station-rest">Rest 45s</div></div><span class="station-reps">100m / 60 reps</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="run-row"><span class="run-pill">Run 3</span><span class="run-dist">1km</span><span class="run-note">RPE 6–7</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="station-row"><div><span class="station-name">Farmers Carry</span><div class="station-rest">Rest 45s</div></div><span class="station-reps">200m / 3 min</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="station-row"><div><span class="station-name">Push-Ups Max 3 min</span><div class="station-rest">Rest 45s</div></div><span class="station-reps">Max reps</span></div>
+    </div>
+    <div class="benchmark-border">
+      <div class="run-row"><span class="run-pill">Run 4</span><span class="run-dist">1km</span><span class="run-note">RPE 9–10 · ALL OUT</span></div>
+    </div>
+    <p class="benchmark-note">Record everything. Compare directly to Week 4 Saturday. The difference is the deload effect — fitness built but not yet recovered enough to fully express.</p>
+  </div>
+  <div class="page-footer"><span class="footer-pg">41</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ COACHING NOTES — PACING STRATEGY ═══ -->
+<div class="page">
+  <div class="content-header">
+    <span class="content-overline">Coaching Notes</span>
+    <div class="content-title">Pacing Strategy</div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="content-field">
+    <p class="body-text">More hybrid training athletes are destroyed by bad pacing than bad fitness. Distributing effort correctly is a trained skill — practice it every Saturday session.</p>
+    <div class="principle"><div class="principle-title">First Run = Easy</div><div class="principle-body">RPE 4–5 to start regardless of how good you feel. Every station that follows will be worse if you went out too fast.</div></div>
+    <div class="principle"><div class="principle-title">Negative Splits</div><div class="principle-body">Each run should match or beat the previous. If splits get slower, you started too fast.</div></div>
+    <div class="principle"><div class="principle-title">Stations: Steady Beats Fast</div><div class="principle-body">Sets of 10 with 3–5s micro-breaks beats an all-out 20 followed by 30s gasping.</div></div>
+    <div class="principle"><div class="principle-title">Transitions Matter</div><div class="principle-body">Move immediately from run to station and back. Time bleeds away in transitions — breathe while moving.</div></div>
+    <div class="principle"><div class="principle-title">Track Your Splits</div><div class="principle-body">Record every run and station time. Data shows exactly where time is lost — almost always the first run and transitions, not the stations.</div></div>
+  </div>
+  <div class="page-footer"><span class="footer-pg">42</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ COACHING NOTES — WALL BALL + PUSH-UP ═══ -->
+<div class="page">
+  <div class="content-header">
+    <span class="content-overline">Technique</span>
+    <div class="content-title">Wall Ball + Push-Up Progression</div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="content-field">
+    <div class="section-label">Wall Ball Technique</div>
+    <div class="principle"><div class="principle-title">Setup</div><div class="principle-body">Stand one arm-length from the wall. Feet shoulder-width. Ball at chest. Eyes on the target line.</div></div>
+    <div class="principle"><div class="principle-title">Squat</div><div class="principle-body">Break at hips first, then knees. Full depth — hip crease below knee. Chest stays up throughout.</div></div>
+    <div class="principle"><div class="principle-title">Throw</div><div class="principle-body">Drive through heels. The throw comes from your legs, not your arms. Arms guide the ball to the target.</div></div>
+    <div class="principle"><div class="principle-title">Catch</div><div class="principle-body">Absorb the ball at chest height. Use the downward momentum to flow into the next squat. No pausing at the top.</div></div>
+    <div class="principle"><div class="principle-title">Fatigued</div><div class="principle-body">When tired, break into sets of 5–8 with 3–5s standing rest. Breathe at the top of each rep — that is your recovery window.</div></div>
+    <div class="content-rule"></div>
+    <div class="section-label">Push-Up Progression Arc</div>
+    <div class="prog-block"><span class="prog-num">1</span><div><div class="prog-title">Kneeling + Negatives</div><div class="prog-desc">Volume from kneeling. Negatives build eccentric strength from toes.</div></div></div>
+    <div class="prog-block"><span class="prog-num">2</span><div><div class="prog-title">Toes Max + Kneel Remainder</div><div class="prog-desc">Bridge building. Max from toes, complete set on knees.</div></div></div>
+    <div class="prog-block"><span class="prog-num">3</span><div><div class="prog-title">Full Push-Ups + Integration</div><div class="prog-desc">Higher volume, renegade rows, AMRAP. Push-ups are conditioning.</div></div></div>
+    <div class="prog-block"><span class="prog-num">4</span><div><div class="prog-title">Max Tests + Combos</div><div class="prog-desc">Multiple max tests. Expect 15–30+ from toes. Compare to Day 1.</div></div></div>
+    <div class="content-rule"></div>
+    <div class="section-label">Recovery Essentials</div>
+    <div class="list-item">Sleep 7–9 hrs · Protein 1.6–2.0g/kg · Hydration 2–3L/day · Active recovery Thu + Sun</div>
+  </div>
+  <div class="page-footer"><span class="footer-pg">43</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ BENCHMARK TRACKER ═══ -->
+<div class="page">
+  <div class="content-header">
+    <span class="content-overline">Track Your Progress</span>
+    <div class="content-title">Benchmark Tracker</div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="content-field">
+    <p class="body-text">Progress you can see is progress you can trust. Each Saturday benchmark is its own snapshot. The metrics below are consistent measures that tell your true story.</p>
+    <table class="tracker-table">
+      <thead><tr><th>Metric</th><th>WK1</th><th>WK2</th><th>WK3</th><th>WK4</th><th>WK5</th></tr></thead>
+      <tbody>
+        <tr><td>Max Push-Ups from Toes</td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td></tr>
+        <tr><td>Wall Balls — Max Unbroken</td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td></tr>
+        <tr><td>1km Run Split (avg)</td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td></tr>
+        <tr><td>100m Sandbag Lunge Time</td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td></tr>
+        <tr><td>200m Farmers Carry Time</td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td></tr>
+        <tr><td>Max Wall Sit Hold</td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td></tr>
+        <tr><td>Zercher Squat Working Wt</td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td></tr>
+        <tr><td>Bodyweight</td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td></tr>
+      </tbody>
+    </table>
+    <div class="content-rule"></div>
+    <div class="section-label">Saturday Benchmark (Wk4 vs Wk5)</div>
+    <table class="tracker-table">
+      <thead><tr><th>Segment</th><th>WK 4 SAT</th><th>WK 5 SAT</th></tr></thead>
+      <tbody>
+        <tr><td>Total Time</td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td></tr>
+        <tr><td>Run 1 Split</td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td></tr>
+        <tr><td>Run 2 Split</td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td></tr>
+        <tr><td>Run 3 Split</td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td></tr>
+        <tr><td>Run 4 Split</td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td></tr>
+        <tr><td>Wall Ball Reps (3 min)</td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td></tr>
+        <tr><td>Push-Up Reps (3 min)</td><td><span class="tracker-fill"></span></td><td><span class="tracker-fill"></span></td></tr>
+      </tbody>
+    </table>
+    <div class="content-rule"></div>
+    <div class="section-label">Weekly Notes</div>
+    <div class="week-note-line"><span class="week-note-label">Week 1:</span><span>_______________________________________________</span></div>
+    <div class="week-note-line"><span class="week-note-label">Week 2:</span><span>_______________________________________________</span></div>
+    <div class="week-note-line"><span class="week-note-label">Week 3:</span><span>_______________________________________________</span></div>
+    <div class="week-note-line"><span class="week-note-label">Week 4:</span><span>_______________________________________________</span></div>
+    <div class="week-note-line"><span class="week-note-label">Week 5:</span><span>_______________________________________________</span></div>
+  </div>
+  <div class="page-footer"><span class="footer-pg">44</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ MOVEMENT GLOSSARY (Page 1) ═══ -->
+<div class="page">
+  <div class="content-header">
+    <span class="content-overline">Reference</span>
+    <div class="content-title">Movement Glossary</div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="content-field">
+    <p class="body-text" style="margin-bottom:8px">Quick reference for every named movement in this program. Look it up before your session — not during it.</p>
+    <div class="glossary-term"><div class="glossary-name">Goblet Squat</div><div class="glossary-def">Hold a kettlebell at chest, both hands cupped around the bell. Squat to full depth, elbows inside knees. Teaches upright posture before heavier loading.</div></div>
+    <div class="glossary-term"><div class="glossary-name">Romanian Deadlift (RDL)</div><div class="glossary-def">Hinge at the hips with soft knees, pushing hips backward while the bar travels close down the legs. Feel the hamstring stretch. Not a squat.</div></div>
+    <div class="glossary-term"><div class="glossary-name">Zercher Squat</div><div class="glossary-def">Bar in the crooks of your elbows, arms crossed at forearms. Elbows high throughout. Full squat with bar in front. Trains functional bracing transferable to carries.</div></div>
+    <div class="glossary-term"><div class="glossary-name">KB Swing (Two-Hand)</div><div class="glossary-def">Hip hinge, not a squat. Bell swings back with hips hinged, then hips snap forward to drive bell to chest height. Arms are passive guides — hips generate the power.</div></div>
+    <div class="glossary-term"><div class="glossary-name">Farmers Carry</div><div class="glossary-def">Walk a set distance holding a weight in each hand. Tall posture, packed shoulders, neutral spine. Direct hybrid training transfer.</div></div>
+    <div class="glossary-term"><div class="glossary-name">Suitcase Carry</div><div class="glossary-def">Same as farmers carry but one weight, one hand. Core resists lateral lean. Trains anti-lateral-flexion stability.</div></div>
+    <div class="glossary-term"><div class="glossary-name">Bear Hug Carry</div><div class="glossary-def">Both arms wrapped around a sandbag at mid-torso. Walk tall. Full trunk engagement. Mirrors competition sandbag carry.</div></div>
+    <div class="glossary-term"><div class="glossary-name">Renegade Row</div><div class="glossary-def">Push-up position on two kettlebells. Row one bell while pressing the other into the floor. Core resists rotation throughout.</div></div>
+    <div class="glossary-term"><div class="glossary-name">Dead Bug</div><div class="glossary-def">On back, arms to ceiling, knees bent 90°. Extend opposite arm and leg toward floor while pressing lower back completely flat. Slow and controlled.</div></div>
+    <div class="glossary-term"><div class="glossary-name">Hollow Body Hold</div><div class="glossary-def">On back, arms overhead, legs straight and lifted. Lower back pressed flat to floor. Hold without arching.</div></div>
+  </div>
+  <div class="page-footer"><span class="footer-pg">45</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ MOVEMENT GLOSSARY (Page 2) ═══ -->
+<div class="page">
+  <div class="content-header">
+    <span class="content-overline">Reference</span>
+    <div class="content-title">Movement Glossary (Cont.)</div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="content-field">
+    <div class="glossary-term"><div class="glossary-name">Push Press</div><div class="glossary-def">Bell at shoulder. Small knee dip, then explosive drive overhead using leg momentum. Lock out at top. Allows more load than strict press.</div></div>
+    <div class="glossary-term"><div class="glossary-name">Hip Thrust</div><div class="glossary-def">Shoulders on bench/box, bar across hips with pad. Drive hips up squeezing glutes. 2s hold at top. Primary glute builder in this program.</div></div>
+    <div class="glossary-term"><div class="glossary-name">Single-Leg RDL</div><div class="glossary-def">Romanian deadlift on one leg. Hinge with planted leg, free leg extends behind. Challenges hamstring strength and hip stability simultaneously.</div></div>
+    <div class="glossary-term"><div class="glossary-name">Cossack Squat</div><div class="glossary-def">Wide stance lateral squat. Shift weight to one side, sit deep over one foot while other leg extends straight. Opens hips and ankles.</div></div>
+    <div class="glossary-term"><div class="glossary-name">Wall Ball</div><div class="glossary-def">Full squat then stand explosively and throw med ball to wall target. Catch and repeat without pausing. Full body power-endurance movement.</div></div>
+    <div class="glossary-term"><div class="glossary-name">Sandbag Lunge</div><div class="glossary-def">Lunge with sandbag bear-hugged at chest. Reverse lunge in Weeks 1–2. Forward/walking lunge from Week 3.</div></div>
+    <div class="glossary-term"><div class="glossary-name">Inchworm</div><div class="glossary-def">Stand, hinge forward, walk hands to plank, pause, walk hands back, stand. Full body warmup movement for hamstrings, shoulders, thoracic spine.</div></div>
+    <div class="glossary-term"><div class="glossary-name">Scapular Wall Slide</div><div class="glossary-def">Back against wall, arms in goalpost position. Slide arms overhead maintaining wall contact throughout. Trains shoulder stability and thoracic mobility.</div></div>
+    <div class="glossary-term"><div class="glossary-name">Towel Pinch Hold</div><div class="glossary-def">Fold a towel to ~2cm thickness. Pinch between thumb and fingers. Squeeze as hard as possible for prescribed time. Grip training with no equipment.</div></div>
+    <div class="glossary-term"><div class="glossary-name">Push-Up Negative</div><div class="glossary-def">Start at top from toes. Lower for a slow 4-second count until chest nears floor. Drop to knees to push back up. Builds eccentric pushing strength.</div></div>
+  </div>
+  <div class="page-footer"><span class="footer-pg">46</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ POST-PROGRAM GUIDE (Page 1) ═══ -->
+<div class="page">
+  <div class="content-header">
+    <span class="content-overline">What's Next</span>
+    <div class="content-title">Post-Program Guide</div>
+    <div class="header-rule"></div>
+  </div>
+  <div class="content-field">
+    <p class="body-text">You have completed structured hybrid training. More than fitness, you have built movement patterns, an understanding of progressive loading, and a physical literacy that persists. Here are your three paths forward.</p>
+    <div class="section-label">Path 1 — Repeat This Program (Recommended)</div>
+    <p class="body-text">Repeating as a beginner is not regression — it is the fastest path to intermediate fitness. Second run through will look completely different because you are a different athlete.</p>
+    <div class="callout"><strong style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;color:var(--text-primary);display:block;margin-bottom:3px">How to Approach Cycle 2</strong>Start heavier (Week 4 loads become starting loads) · Start faster (Week 1 pace should feel like Week 2–3 did) · Less rest from the start (reduce rest by 10–15s across sessions) · Longer Saturday distances (+10–20%) · Observe new baselines.</div>
+    <div class="section-label">Path 2 — Progress to Intermediate</div>
+    <p class="body-text">You are ready when: Week 4 Saturday benchmark feels hard but not devastating · Max push-ups from toes is 20+ · Z2 running comfortable at 5–6km · Zercher 5×5 with crisp form · Consistently 5–6 training days per week.</p>
+    <p class="body-text">At that point look for programs adding: longer run volume (4–8km+ per session), more stations, heavier carries, and new movements like ski erg, rowing, burpees.</p>
+    <div class="section-label">Path 3 — Build Your Own</div>
+    <div class="principle"><div class="principle-title">Progressive Overload</div><div class="principle-body">Increase something every 1–2 weeks.</div></div>
+    <div class="principle"><div class="principle-title">Movement Balance</div><div class="principle-body">Push/pull, quad/hip parity.</div></div>
+    <div class="principle"><div class="principle-title">Recovery Ratio</div><div class="principle-body">1 active recovery + 1 rest per 3–4 hard days.</div></div>
+    <div class="principle"><div class="principle-title">Specificity</div><div class="principle-body">Train what you want to improve.</div></div>
+    <div class="principle"><div class="principle-title">Test Regularly</div><div class="principle-body">Benchmark every 3–4 weeks.</div></div>
+    <p class="body-text" style="margin-top:12px">The athletes who keep improving showed up consistently, tracked honestly, loaded intelligently, and recovered well. Those habits come from deciding this is how you train now. Go again.</p>
+  </div>
+  <div class="page-footer"><span class="footer-pg">47</span><span class="footer-prog">Hybrid Training Acceleration</span></div>
+</div>
+
+<!-- ═══ CLOSING PAGE ═══ -->
+<div class="page closing">
+  <div class="closing-content">
+    <div class="closing-big">Four Weeks<br>Will Not Make<br>You Elite.</div>
+    <div class="closing-body">But four weeks of focused, progressive, intelligent training will make you unrecognisable from where you started. You will be stronger, leaner, faster, and more capable. But more importantly — you will have built the habits, the discipline, and the physical literacy that allow you to keep improving for months and years to come.<br><br>The program ends here. Your training does not.</div>
+    <div class="closing-tagline">Trust the Process.<br>Track Your Numbers.<br>Do the Work.</div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
